@@ -9,10 +9,21 @@
 <body>
   <main class="shell">
     <h1>Mow Grass Mo' Money - Tycoon Text POC</h1>
-    <canvas id="game" width="980" height="180" aria-label="Tycoon status canvas"></canvas>
-    <pre id="console" aria-live="polite"></pre>
+    <section class="workspace" aria-label="Game workspace">
+      <pre id="console" aria-live="polite"></pre>
+      <div class="right-column">
+        <aside class="stats-panel" aria-label="Ongoing stats panel">
+          <h2>Ongoing Stats</h2>
+          <canvas id="game" width="980" height="180" aria-label="Tycoon status canvas"></canvas>
+        </aside>
+        <section class="customers-panel" aria-label="Active customers panel">
+          <h2>Active Customers</h2>
+          <ul id="active-customers"></ul>
+        </section>
+      </div>
+    </section>
     <p class="hint">
-      Controls: `Up/Down` move job cursor, `Space` toggle job, `Enter` continue/confirm, `Up/Down` score in performance, `Left/Right` cycle pattern, `A` buy upgrade, `F` fullscreen.
+      Day start: choose `Solicit`, `Follow Up Leads`, `Mow Lawns`, or `Shop for New Hardware` (`Up/Down` + `Enter`). Upgrades are only purchased inside the shop activity. `Space` toggles list selections and `Left/Right` changes pattern in performance.
     </p>
   </main>
   <script src="game.js"></script>

@@ -9,3 +9,4 @@ node_modules/
 !**/yarn.lock
 !**/pnpm-lock.yaml
 tycoon-poc-text/output/
+.DS_Store

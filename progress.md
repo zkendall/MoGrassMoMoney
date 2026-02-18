@@ -76,3 +76,90 @@ TODO / Next suggestions:
 - Add a dedicated seeded simulation mode endpoint (run N days without UI input) for faster economy balancing.
 - Surface richer report details in `render_game_to_text` for direct assertion tests (per-job expected vs actual multipliers).
 - Optionally port this text loop into the existing mowing POC as a pre/post-mow meta layer.
+- Updated `tycoon-poc-text` layout orientation:
+  - Console moved into left column.
+  - Ongoing stats (canvas) moved into right panel with heading.
+  - Added responsive breakpoint to stack panels on narrow screens.
+- Verified app still renders and state output unchanged via Playwright artifacts in `tycoon-poc-text/output/web-game-layout`.
+
+- Documentation sync for latest tycoon spec:
+  - Updated `tycoon-poc-text/POC-Tycoon.md` to match current implementation.
+  - Clarified current build target is browser-based text-first UI in `tycoon-poc-text`.
+  - Updated interface spec to left-right workspace:
+    - left console panel
+    - right `Ongoing Stats` panel
+    - right `Active Customers` panel below stats
+  - Captured current controls:
+    - Planning: Up/Down, Space, Enter
+    - Performance: Up/Down, Left/Right, Enter
+    - Report: A/U, Enter
+    - Global: R, F
+  - Captured implemented simulation features:
+    - payout multipliers + pattern preference modifier
+    - fuel/maintenance/net economy
+    - retention/churn + new-customer conversion
+    - 3-tier upgrades
+    - deterministic hooks (`render_game_to_text`, `advanceTime`)
+
+- UI updates reflected in spec:
+  - Forced left-right panel orientation (no auto stack fallback).
+  - Improved stats readability by resizing canvas rendering to panel size and increasing text scale.
+  - Added `Active Customers` panel under stats with risk marker (`[risk]`) for delayed service.
+- Updated tycoon customer acquisition flow:
+  - Day 1 now starts with zero active repeat customers.
+  - New customers are not auto-converted.
+  - After resolving a day, passing new jobs (`final_score >= 70`) are shown as regular-customer offers in report phase.
+  - Player can accept/decline offers (`Up/Down` + `Space`), and accepted offers are applied at next-day transition.
+- Updated report controls and state payload:
+  - Added offer cursor/selection handling in report mode.
+  - Added `pending_regular_offers` in `render_game_to_text` payload.
+- Updated docs/UI text for new controls and offer flow:
+  - `tycoon-poc-text/index.html` hint text
+  - `tycoon-poc-text/README.md`
+  - `tycoon-poc-text/POC-Tycoon.md`
+- Verification:
+  - Playwright loop run: `tycoon-poc-text/output/web-game-offers`
+  - Deterministic probe confirms offer lifecycle works:
+    - report mode shows pending offers
+    - accepting an offer adds repeat customer on next day
+- Implemented day-action decision system in `tycoon-poc-text/game.js`:
+  - New start-of-day phase: `day_action` with options `Solicit`, `Follow Up Leads`, `Mow Lawns`.
+  - Day 1 now starts with zero active repeat customers.
+- Added lead pipeline model:
+  - `state.leads[]` persists across days with `lead_status` (`raw`/`qualified`).
+  - `Solicit` generates probabilistic raw leads and charges random materials cost.
+  - `Follow Up Leads` attempts to convert raw leads to qualified leads.
+  - `Mow Lawns` planning list now pulls from qualified leads + repeat customers only.
+- Updated mowing conversion lifecycle:
+  - Lead jobs with passing score (`final_score >= 70`) become regular-customer offers in report.
+  - Player accepts/declines offers in report; accepted offers become repeat customers next day.
+  - Serviced leads are removed from lead pool after mowing.
+- Updated report accounting:
+  - Non-mow actions now produce end-of-day reports with `activity` and `materials` cost fields.
+  - `render_game_to_text` now includes `leads`, `day_action`, and updated controls text.
+- Updated UI/doc text:
+  - `tycoon-poc-text/index.html` hint text updated for day-action flow.
+  - `tycoon-poc-text/README.md` updated with day flow + controls.
+  - `tycoon-poc-text/POC-Tycoon.md` updated to match lead-based acquisition design.
+- Verification:
+  - Playwright loop artifacts: `tycoon-poc-text/output/web-game-day-actions`.
+  - Deterministic probe confirmed requested behavior:
+    - `initial_repeat: 0`
+    - `solicit_activity: solicit` with materials spend
+    - mowing jobs sourced from leads (`mow_job_sources: ["lead", ...]`)
+    - passing-grade offer appears and accepted offer becomes active repeat customer next day.
+- Balancing tweak: reduced tycoon starting cash so day one begins below first mower upgrade cost.
+  - Added `STARTING_CASH = 220` in `tycoon-poc-text/game.js`.
+  - Applied value to initial state and reset path (`initialize()`).
+- Note: attempted Playwright state verification was blocked by approval denial; code-level check confirms the configured value.
+- Moved mower upgrade purchase from report phase into new day-action activity: `Shop for New Hardware`.
+- `day_action` options now: `Solicit`, `Follow Up Leads`, `Mow Lawns`, `Shop for New Hardware`.
+- Added `hardware_shop` mode:
+  - `Up/Down` selects buy vs skip.
+  - `Enter` confirms and ends the day.
+  - Buying applies upgrade immediately and records `hardware_purchase`/`hardware_cost` in day report.
+- Removed upgrade purchase keybinds from report mode.
+- Updated docs/UI text:
+  - `tycoon-poc-text/index.html`
+  - `tycoon-poc-text/README.md`
+  - `tycoon-poc-text/POC-Tycoon.md`
