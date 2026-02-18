@@ -41,6 +41,17 @@ Open `http://127.0.0.1:4174`.
 - `window.render_game_to_text()` returns concise JSON state.
 - `window.advanceTime(ms)` advances deterministic simulation ticks.
 
+## Code Structure
+
+- `game.js`: thin loader that imports the app entrypoint.
+- `src/index.js`: app wiring (state initialization, render loop, exported hooks).
+- `src/stateMachine.js`: centralized mode transitions (`state.mode` changes happen here).
+- `src/dayActions.js`: gameplay action handlers and day-loop logic.
+- `src/jobs.js`: customer/lead generation, payout and retention helpers.
+- `src/processing.js`: timed processing/spinner transitions.
+- `src/render/*`: console, status panel, and active customer rendering.
+- `src/keyboard.js`: per-mode input routing.
+
 ## Snapshot Numbering Guideline
 
 - Run verification with:

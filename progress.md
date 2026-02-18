@@ -216,3 +216,12 @@ TODO / Next suggestions:
 - Verification:
   - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
   - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/14-gameplay-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/14-gameplay-probe.json`.
+- Refactor: split `tycoon-poc-text/game.js` into modular files under `tycoon-poc-text/src` with no intended behavior changes.
+  - Added modules: `constants.js`, `state.js`, `stateMachine.js`, `jobs.js`, `dayActions.js`, `processing.js`, `keyboard.js`, `render/consoleView.js`, `render/statusPanel.js`, `render/activeCustomersView.js`, `index.js`.
+  - Converted top-level `game.js` into a thin loader that imports `src/index.js`.
+  - Centralized mode transitions via `stateMachine.js` (`transitionTo`/`forceMode`) to keep flow rules in one place.
+- Docs update:
+  - Added a `Code Structure` section to `tycoon-poc-text/README.md` describing the new module layout.
+- Verification:
+  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
+  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/15-gameplay-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/15-gameplay-probe.json`.
