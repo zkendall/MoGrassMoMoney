@@ -14,6 +14,8 @@ HISTORY_PATH="$OUT_ROOT/.verify-history.json"
 STATE_TMP="$(mktemp)"
 
 WEB_GAME_CLIENT="${WEB_GAME_CLIENT:-$HOME/.codex/skills/develop-web-game/scripts/web_game_playwright_client.js}"
+VERIFY_ACTIONS_FILE="$ROOT_DIR/scripts/verify-tycoon-actions.json"
+VERIFY_HEADED_RUNNER="$ROOT_DIR/scripts/verify-tycoon-headed-runner.js"
 
 mkdir -p "$OUT_ROOT"
 
@@ -60,17 +62,14 @@ node --check "$ROOT_DIR/game.js"
 # 2) Run action loop and capture screenshots/state
 if (( HEADED )); then
   # Headed path intentionally uses real-time keypress spacing so flows are watchable.
-  (
-    cd "$ROOT_DIR"
-    node -e "const fs=require('fs'); const path=require('path'); const { chromium }=require('playwright'); (async()=>{ const url=process.argv[1]; const outDir=process.argv[2]; fs.mkdirSync(outDir,{recursive:true}); const browser=await chromium.launch({ headless:false, args:['--use-gl=angle','--use-angle=swiftshader'] }); const page=await browser.newPage(); const errors=[]; page.on('console',(msg)=>{ if(msg.type()==='error'){ errors.push({ type:'console.error', text:msg.text() }); } }); page.on('pageerror',(err)=>{ errors.push({ type:'pageerror', text:String(err) }); }); await page.goto(url,{ waitUntil:'domcontentloaded' }); await page.waitForTimeout(800); const press=async(key,waitMs)=>{ await page.keyboard.press(key); await page.waitForTimeout(waitMs); }; await press('Enter', 1400); await page.waitForTimeout(1700); await press('Enter', 1100); await press('ArrowDown', 500); await press('Enter', 1200); await page.waitForTimeout(1500); await press('Enter', 1000); await page.screenshot({ path:path.join(outDir,'shot-0.png'), fullPage:true }); const text=await page.evaluate(()=> typeof window.render_game_to_text==='function' ? window.render_game_to_text() : null); if(text){ fs.writeFileSync(path.join(outDir,'state-0.json'), text); } if(errors.length){ fs.writeFileSync(path.join(outDir,'errors-0.json'), JSON.stringify(errors,null,2)); } await browser.close(); })().catch((err)=>{ console.error(err); process.exit(1); });" "$URL" "$WEB_GAME_DIR"
-  )
+  (cd "$ROOT_DIR" && node "$VERIFY_HEADED_RUNNER" "$URL" "$WEB_GAME_DIR")
 else
   node "$WEB_GAME_CLIENT" \
     --url "$URL" \
     --headless true \
-    --iterations 2 \
+    --iterations 1 \
     --screenshot-dir "$WEB_GAME_DIR" \
-    --actions-json '{"steps":[{"buttons":["enter"],"frames":4},{"buttons":[],"frames":90},{"buttons":["enter"],"frames":4},{"buttons":["down","enter"],"frames":4},{"buttons":[],"frames":90},{"buttons":["enter"],"frames":4}]}'
+    --actions-file "$VERIFY_ACTIONS_FILE"
 fi
 
 # 3) Summarize captured state snapshots

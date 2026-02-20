@@ -457,6 +457,14 @@ TODO / Next suggestions:
 - Verification script consolidation:
   - Removed `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon.sh` wrapper.
   - Kept single implementation script: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh http://127.0.0.1:4174` after consolidation.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/36-verify-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/36-verify-probe.json`.
+- Verification: Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
+- Expanded verification choreography in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh` to cover additional day actions.
+  - Verify sequence now explicitly attempts: `Solicit` -> `Follow Up Leads` -> `Mow Lawns` -> `Shop for New Hardware` in one run.
+  - Updated both headless action JSON and headed keypress path.
+  - Reduced headless iterations from 2 to 1 because the single choreography now spans multiple day transitions/actions.
+- Verification: Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
+- Verification script readability refactor:
+  - Extracted headless choreography payload from inline `--actions-json` into `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-actions.json`.
+  - Extracted headed Playwright inline `node -e` logic into `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-headed-runner.js`.
+  - Updated `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh` to reference the extracted files via `--actions-file` and runner script invocation.
+- Verification: Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
