@@ -441,3 +441,25 @@ TODO / Next suggestions:
 - Verification:
   - Parsed `verify-tycoon-actions.json` (`json ok`).
   - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-headed-runner.js`.
+- Regression suite readability refactor in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js`:
+  - Added generic step-plan executor (`executePlan`) with per-step failure context including `desc`.
+  - Added reusable step ops for explicit, state-aware interactions: mode assertions/waits, key presses, lead seeding, processing completion, and key scenario assertions.
+  - Scenario implementations now run named plans instead of inline imperative keypress blocks.
+- Added step-plan definitions file:
+  - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/regression-step-plans.json`.
+  - Contains documented (`desc`) plans for `solicit_report`, `follow_up_report`, `mow_offer_accept`, and `seed_summary`.
+- Verification:
+  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js`.
+  - Parsed `regression-step-plans.json` (`step plans json ok`).
+- Regression runner update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js`:
+  - Added headed toggle support.
+  - New CLI options:
+    - `--headed` sets Playwright launch to headed (`headless: false`).
+    - `--headless true|false` (or `1|0`) explicitly controls headless mode.
+  - Runner summary output now includes `headless` to show launch mode used.
+- Verification:
+  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js`.
+- Verification:
+  - Ran headed regression suite: `npm --prefix tycoon-poc-text run test:regression -- --url http://127.0.0.1:4174 --headed`.
+  - Result: pass (`status: ok`) across scenarios `solicit_report`, `follow_up_report`, and `mow_offer_accept`.
+  - Summary artifact: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/regression-tests/latest-summary.json`.

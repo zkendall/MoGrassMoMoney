@@ -6,12 +6,15 @@ const { chromium } = require('playwright');
 const ROOT_DIR = path.resolve(__dirname, '..');
 const GOLDEN_DIR = path.join(ROOT_DIR, 'tests', 'golden');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output', 'regression-tests');
+const STEP_PLANS_PATH = path.join(ROOT_DIR, 'scripts', 'regression-step-plans.json');
+const STEP_PLANS = JSON.parse(fs.readFileSync(STEP_PLANS_PATH, 'utf8'));
 
 function parseArgs(argv) {
   const args = {
     url: 'http://127.0.0.1:4174',
     updateGolden: false,
     seedMatrixOnly: false,
+    headless: true,
     seeds: [2, 17, 29, 41, 53, 67, 83, 97, 111, 131],
   };
   for (let i = 2; i < argv.length; i += 1) {
@@ -24,6 +27,21 @@ function parseArgs(argv) {
       args.updateGolden = true;
     } else if (arg === '--seed-matrix-only') {
       args.seedMatrixOnly = true;
+    } else if (arg === '--headed') {
+      args.headless = false;
+    } else if (arg === '--headless') {
+      if (!next) {
+        throw new Error('--headless requires true/false');
+      }
+      const normalized = String(next).trim().toLowerCase();
+      if (normalized === 'true' || normalized === '1') {
+        args.headless = true;
+      } else if (normalized === 'false' || normalized === '0') {
+        args.headless = false;
+      } else {
+        throw new Error('--headless must be true/false (or 1/0)');
+      }
+      i += 1;
     } else if (arg === '--seeds' && next) {
       const parsed = next
         .split(',')
@@ -157,20 +175,102 @@ async function openSeededPage(browser, baseUrl, seed) {
   return page;
 }
 
+async function executeStep(page, step) {
+  const times = Number.isFinite(step.times) ? step.times : 1;
+
+  if (step.op === 'press') {
+    for (let i = 0; i < times; i += 1) {
+      await page.keyboard.press(step.key);
+    }
+    return;
+  }
+
+  if (step.op === 'set_leads') {
+    await page.evaluate(({ count, status }) => window.__tycoonTestSetLeads({ count, status }), {
+      count: step.count,
+      status: step.status,
+    });
+    return;
+  }
+
+  if (step.op === 'wait_mode') {
+    await waitForMode(page, step.mode, step.timeout_ms || 6000);
+    return;
+  }
+
+  if (step.op === 'assert_mode') {
+    const state = await readState(page);
+    if (state.mode !== step.mode) {
+      throw new Error(`Expected mode=${step.mode}, got ${state.mode}`);
+    }
+    return;
+  }
+
+  if (step.op === 'complete_processing') {
+    await completeProcessing(page, step.duration_ms, step.require_confirm);
+    return;
+  }
+
+  if (step.op === 'assert_min_planning_jobs') {
+    const state = await readState(page);
+    const jobCount = (state.planning_jobs || []).length;
+    if (jobCount < step.min) {
+      throw new Error(`Expected at least ${step.min} planning jobs, got ${jobCount}`);
+    }
+    return;
+  }
+
+  if (step.op === 'assert_last_report_activity') {
+    const state = await readState(page);
+    const activity = state.last_report?.activity;
+    if (activity !== step.activity) {
+      throw new Error(`Expected report activity=${step.activity}, got ${activity}`);
+    }
+    return;
+  }
+
+  if (step.op === 'assert_pending_offers') {
+    const state = await readState(page);
+    const offerCount = (state.pending_regular_offers || []).length;
+    if (offerCount < step.min) {
+      throw new Error(`Expected at least ${step.min} pending offers, got ${offerCount}`);
+    }
+    return;
+  }
+
+  if (step.op === 'assert_repeat_customers') {
+    const state = await readState(page);
+    const repeatCount = (state.repeat_customers || []).length;
+    if (repeatCount < step.min) {
+      throw new Error(`Expected at least ${step.min} repeat customers, got ${repeatCount}`);
+    }
+    return;
+  }
+
+  throw new Error(`Unknown regression step op: ${step.op}`);
+}
+
+async function executePlan(page, planName) {
+  const steps = STEP_PLANS[planName];
+  if (!Array.isArray(steps)) {
+    throw new Error(`Missing step plan: ${planName}`);
+  }
+  for (let i = 0; i < steps.length; i += 1) {
+    const step = steps[i];
+    try {
+      await executeStep(page, step);
+    } catch (error) {
+      const prefix = `Step ${i + 1}/${steps.length}${step.desc ? ` (${step.desc})` : ''}`;
+      throw new Error(`${prefix} failed: ${error.message || error}`);
+    }
+  }
+}
+
 async function scenarioSolicitReport(browser, baseUrl) {
   const seed = 2;
   const page = await openSeededPage(browser, baseUrl, seed);
-
-  const initial = await readState(page);
-  if (initial.mode !== 'day_action') {
-    throw new Error(`solicit_report expected day_action, got ${initial.mode}`);
-  }
-
-  await page.keyboard.press('Enter');
-  const result = await completeProcessing(page, 1200, true);
-  if (result.mode !== 'report' || result.last_report?.activity !== 'solicit') {
-    throw new Error('solicit_report did not finish in solicit report mode');
-  }
+  await executePlan(page, 'solicit_report');
+  const result = await readState(page);
 
   await page.close();
   return pickScenarioSnapshot('solicit_report', result);
@@ -179,15 +279,8 @@ async function scenarioSolicitReport(browser, baseUrl) {
 async function scenarioFollowUpReport(browser, baseUrl) {
   const seed = 2;
   const page = await openSeededPage(browser, baseUrl, seed);
-
-  await page.evaluate(() => window.__tycoonTestSetLeads({ count: 3, status: 'raw' }));
-
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-  const result = await completeProcessing(page, 1000, true);
-  if (result.mode !== 'report' || result.last_report?.activity !== 'follow_up') {
-    throw new Error('follow_up_report did not finish in follow-up report mode');
-  }
+  await executePlan(page, 'follow_up_report');
+  const result = await readState(page);
 
   await page.close();
   return pickScenarioSnapshot('follow_up_report', result);
@@ -196,43 +289,8 @@ async function scenarioFollowUpReport(browser, baseUrl) {
 async function scenarioMowOfferAccept(browser, baseUrl) {
   const seed = 2;
   const page = await openSeededPage(browser, baseUrl, seed);
-  await page.evaluate(() => window.__tycoonTestSetLeads({ count: 2, status: 'qualified' }));
-
-  await waitForMode(page, 'day_action');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
-  await waitForMode(page, 'planning');
-
-  const planning = await readState(page);
-  if (!planning.planning_jobs || !planning.planning_jobs.length) {
-    throw new Error('mow_offer_accept scenario found no planning jobs');
-  }
-
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Enter');
-  await waitForMode(page, 'performance');
-
-  for (let i = 0; i < 22; i += 1) {
-    await page.keyboard.press('ArrowUp');
-  }
-  await page.keyboard.press('Enter');
-  const report = await completeProcessing(page, 1100, true);
-  if (report.mode !== 'report' || report.last_report?.activity !== 'mow') {
-    throw new Error('mow_offer_accept did not finish in mow report mode');
-  }
-  if (!report.pending_regular_offers || !report.pending_regular_offers.length) {
-    throw new Error('mow_offer_accept expected at least one pending regular offer');
-  }
-
-  await page.keyboard.press('Space');
-  await page.keyboard.press('Enter');
-  await completeProcessing(page, 700, false);
-  const dayStart = await waitForMode(page, 'day_action');
-
-  if (!dayStart.repeat_customers || !dayStart.repeat_customers.length) {
-    throw new Error('mow_offer_accept expected repeat customer after accepting offer');
-  }
+  await executePlan(page, 'mow_offer_accept');
+  const dayStart = await readState(page);
 
   await page.close();
   return pickScenarioSnapshot('mow_offer_accept', dayStart);
@@ -260,8 +318,8 @@ function assertEqual(name, actual, expected) {
 
 async function runSeedSummary(browser, baseUrl, seed) {
   const page = await openSeededPage(browser, baseUrl, seed);
-  await page.keyboard.press('Enter');
-  const report = await completeProcessing(page, 1200, true);
+  await executePlan(page, 'seed_summary');
+  const report = await readState(page);
 
   const summary = {
     seed,
@@ -295,7 +353,7 @@ async function runSeedMatrix(browser, baseUrl, seeds) {
 async function main() {
   const args = parseArgs(process.argv);
   const browser = await chromium.launch({
-    headless: true,
+    headless: args.headless,
     args: ['--use-gl=angle', '--use-angle=swiftshader'],
   });
 
@@ -339,6 +397,7 @@ async function main() {
     console.log(JSON.stringify({
       status: 'ok',
       scenarios: Object.keys(actual),
+      headless: args.headless,
       seeds: args.seeds,
       summary: path.join(OUTPUT_DIR, 'latest-summary.json'),
     }, null, 2));
