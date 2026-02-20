@@ -16,6 +16,9 @@ STATE_TMP="$(mktemp)"
 WEB_GAME_CLIENT="${WEB_GAME_CLIENT:-$HOME/.codex/skills/develop-web-game/scripts/web_game_playwright_client.js}"
 VERIFY_ACTIONS_FILE="$ROOT_DIR/scripts/verify-tycoon-actions.json"
 VERIFY_HEADED_RUNNER="$ROOT_DIR/scripts/verify-tycoon-headed-runner.js"
+VERIFY_LABELER="$ROOT_DIR/scripts/compute-verify-label.js"
+VERIFY_SUMMARIZER="$ROOT_DIR/scripts/summarize-verify-states.js"
+VERIFY_URL="$(node -e "const u=new URL(process.argv[1]); if(!u.searchParams.has('start_state')) u.searchParams.set('start_state','test_all_actions'); console.log(u.toString());" "$URL")"
 
 mkdir -p "$OUT_ROOT"
 
@@ -41,12 +44,12 @@ next_index() {
   printf "%02d" $((max + 1))
 }
 
-LABEL="$(node -e "const fs=require('fs'); const path=require('path'); const crypto=require('crypto'); const root=process.argv[1]; const stateOut=process.argv[2]; const historyPath=process.argv[3]; function walk(dir, rel=''){ const entries=fs.readdirSync(dir,{withFileTypes:true}); let out=[]; for(const e of entries){ const childRel=rel?path.posix.join(rel,e.name):e.name; const full=path.join(dir,e.name); if(e.isDirectory()){ if(childRel==='output' || childRel==='.git' || childRel==='node_modules') continue; out=out.concat(walk(full, childRel)); } else { out.push(childRel); } } return out; } const files=walk(root).sort(); const hashes={}; for(const rel of files){ const full=path.join(root, rel); const buf=fs.readFileSync(full); hashes[rel]=crypto.createHash('sha1').update(buf).digest('hex'); } const prev=fs.existsSync(historyPath)?JSON.parse(fs.readFileSync(historyPath,'utf8')):{hashes:{}}; const changed=[]; const keys=new Set([...Object.keys(prev.hashes||{}), ...Object.keys(hashes)]); for(const k of keys){ if((prev.hashes||{})[k]!==hashes[k]) changed.push(k); } const has=(re)=>changed.some(p=>re.test(p)); const categories=[]; if(has(/(^|\/)game\.js$/)) categories.push('gameplay'); if(has(/(^|\/)(index\.html|styles\.css)$/)) categories.push('ui'); if(has(/(^|\/)(README\.md|POC-Tycoon\.md|progress\.md)$/)) categories.push('docs'); if(has(/(^|\/)scripts\/(verify-tycoon\.sh|verify-tycoon-quick\.sh)$/)) categories.push('verify'); const leaf=(p)=>p.split('/').pop()||p; const slug=(s)=>s.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').toLowerCase(); let label='no-change'; if(changed.length){ if(categories.length){ label=categories.slice(0,2).join('-'); } else { label=slug(leaf(changed[0])) || 'misc'; } } label=label.slice(0,32).replace(/-+$/,''); fs.writeFileSync(stateOut, JSON.stringify({hashes, changed, label, computed_at:new Date().toISOString()}, null, 2)); console.log(label);" "$ROOT_DIR" "$STATE_TMP" "$HISTORY_PATH")"
+LABEL="$(node "$VERIFY_LABELER" "$ROOT_DIR" "$STATE_TMP" "$HISTORY_PATH")"
 RUN_ID="$(next_index)"
 WEB_GAME_DIR="$OUT_ROOT/${RUN_ID}-${LABEL}-web-game"
 PROBE_PATH="$OUT_ROOT/${RUN_ID}-${LABEL}-probe.json"
 
-echo "[verify-tycoon-quick] URL: $URL"
+echo "[verify-tycoon-quick] URL: $VERIFY_URL"
 echo "[verify-tycoon-quick] Run: $RUN_ID"
 echo "[verify-tycoon-quick] Label: $LABEL"
 if (( HEADED )); then
@@ -62,10 +65,10 @@ node --check "$ROOT_DIR/game.js"
 # 2) Run action loop and capture screenshots/state
 if (( HEADED )); then
   # Headed path intentionally uses real-time keypress spacing so flows are watchable.
-  (cd "$ROOT_DIR" && node "$VERIFY_HEADED_RUNNER" "$URL" "$WEB_GAME_DIR")
+  (cd "$ROOT_DIR" && node "$VERIFY_HEADED_RUNNER" "$VERIFY_URL" "$WEB_GAME_DIR")
 else
   node "$WEB_GAME_CLIENT" \
-    --url "$URL" \
+    --url "$VERIFY_URL" \
     --headless true \
     --iterations 1 \
     --screenshot-dir "$WEB_GAME_DIR" \
@@ -73,7 +76,7 @@ else
 fi
 
 # 3) Summarize captured state snapshots
-node -e "const fs = require('fs'); const path = require('path'); const dir = process.argv[1]; const files = fs.readdirSync(dir).filter(f => /^state-\\d+\\.json$/.test(f)).sort(); if (!files.length) { console.error('No state files found'); process.exit(1); } const states = files.map(f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'))); const first = states[0]; const last = states[states.length - 1]; const debugLogs = states.flatMap(s => s.debug_log_tail || []); const hasRollLogs = debugLogs.some(entry => /roll=/.test(entry.message || '')); const summary = { run_id: process.argv[3], label: process.argv[4], iterations: states.length, first: { day: first.day, mode: first.mode, cash: first.cash, repeat_customers: (first.repeat_customers || []).length, leads: (first.leads || []).length }, last: { day: last.day, mode: last.mode, cash: last.cash, repeat_customers: (last.repeat_customers || []).length, leads: (last.leads || []).length }, any_pending_offers: states.some(s => (s.pending_regular_offers || []).length > 0), modes_seen: [...new Set(states.map(s => s.mode))], debug_log_entries: debugLogs.length, debug_roll_logs_found: hasRollLogs }; if (!hasRollLogs) { console.error('Expected debug roll logs were not found in state payload.'); process.exit(1); } fs.writeFileSync(process.argv[2], JSON.stringify(summary, null, 2)); console.log(JSON.stringify(summary, null, 2));" "$WEB_GAME_DIR" "$PROBE_PATH" "$RUN_ID" "$LABEL"
+node "$VERIFY_SUMMARIZER" "$WEB_GAME_DIR" "$PROBE_PATH" "$RUN_ID" "$LABEL"
 
 # 4) Persist current state as baseline for "since last verify" comparison
 cp "$STATE_TMP" "$HISTORY_PATH"

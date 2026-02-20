@@ -394,3 +394,19 @@ TODO / Next suggestions:
 - Verification:
   - Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh http://127.0.0.1:4174 --headed`.
   - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/40-no-change-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/40-no-change-probe.json`.
+- Documentation sync in `/Users/zkendall/projects/MowGrassMoMoney/AGENTS.md`:
+  - Added explicit brevity rules for verification logging in `progress.md` (single-line `Verified by ...`, no artifact paths unless needed for failures/investigations, avoid no-change rerun noise).
+- Verify choreography reliability fix after observed missing `mow`/`shop_hardware` coverage:
+  - Root cause: entering planning from `mow` clears `selectedJobIds`, so `Enter` alone did not advance to performance; sequence stalled in planning.
+  - Updated `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-actions.json` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-headed-runner.js` to select a job (`Space`) before planning confirm.
+  - Updated `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh` to default verify URL to `?start_state=test_all_actions` when not provided and to include `last_report_activity` in probe output.
+  - Relaxed probe guard so missing `roll=` debug logs no longer hard-fail verify runs in mid-game test starts.
+- Verification:
+  - Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh http://127.0.0.1:4174` after updates.
+  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/43-verify-tycoon-actions-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/43-verify-tycoon-actions-probe.json`.
+- Refactored `tycoon-poc-text/scripts/verify-tycoon-quick.sh` to replace long inline `node -e` blocks with `tycoon-poc-text/scripts/compute-verify-label.js` and `tycoon-poc-text/scripts/summarize-verify-states.js`.
+- Verified by `bash -n tycoon-poc-text/scripts/verify-tycoon-quick.sh`, `node --check tycoon-poc-text/scripts/compute-verify-label.js`, and `node --check tycoon-poc-text/scripts/summarize-verify-states.js`.
+- Verification:
+  - Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh http://127.0.0.1:4174 --headed` with `test_all_actions` start override.
+  - Probe confirms sequence reached hardware shop path (`last_report_activity: "shop_hardware"`).
+  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/44-verify-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/44-verify-probe.json`.

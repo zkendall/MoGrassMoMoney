@@ -13,38 +13,35 @@ if (!url || !outDir) {
 
 const steps = [
   ['Enter', 500],
-  ['WAIT', 1700],
+  ['Space', 350],
   ['Enter', 500],
+  ['Enter', 500],
+  ['WAIT', 1500],
+  ['Enter', 500],
+  ['Enter', 500],
+  ['WAIT', 900],
+
+  ['ArrowDown', 350],
+  ['Enter', 500],
+  ['WAIT', 1300],
+  ['Enter', 500],
+  ['WAIT', 1200],
+  ['Enter', 500],
+  ['Enter', 500],
+  ['WAIT', 900],
+
+  ['ArrowUp', 350],
+  ['ArrowUp', 350],
+  ['Enter', 500],
+  ['WAIT', 1500],
+  ['Enter', 500],
+  ['Enter', 500],
+  ['WAIT', 900],
 
   ['ArrowDown', 350],
   ['Enter', 500],
   ['WAIT', 1500],
   ['Enter', 500],
-
-  ['Enter', 500],
-  ['WAIT', 900],
-  ['ArrowDown', 350],
-  ['Enter', 500],
-  ['Space', 350],
-  ['Enter', 500],
-  ['Enter', 500],
-  ['WAIT', 1400],
-  ['Enter', 500],
-
-  ['Enter', 500],
-  ['WAIT', 900],
-  ['ArrowDown', 350],
-  ['Enter', 500],
-  ['WAIT', 1300],
-  ['Enter', 500],
-
-  ['ArrowDown', 350],
-  ['Enter', 500],
-  ['WAIT', 1000],
-  ['Enter', 500],
-
-  ['Enter', 500],
-  ['WAIT', 900],
 ];
 
 async function run() {
