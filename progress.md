@@ -117,11 +117,7 @@ TODO / Next suggestions:
   - `tycoon-poc-text/index.html` hint text
   - `tycoon-poc-text/README.md`
   - `tycoon-poc-text/POC-Tycoon.md`
-- Verification:
-  - Playwright loop run: `tycoon-poc-text/output/web-game-offers`
-  - Deterministic probe confirms offer lifecycle works:
-    - report mode shows pending offers
-    - accepting an offer adds repeat customer on next day
+- Verification: Verified by Playwright run, deterministic probe.
 - Implemented day-action decision system in `tycoon-poc-text/game.js`:
   - New start-of-day phase: `day_action` with options `Solicit`, `Follow Up Leads`, `Mow Lawns`.
   - Day 1 now starts with zero active repeat customers.
@@ -141,13 +137,7 @@ TODO / Next suggestions:
   - `tycoon-poc-text/index.html` hint text updated for day-action flow.
   - `tycoon-poc-text/README.md` updated with day flow + controls.
   - `tycoon-poc-text/POC-Tycoon.md` updated to match lead-based acquisition design.
-- Verification:
-  - Playwright loop artifacts: `tycoon-poc-text/output/web-game-day-actions`.
-  - Deterministic probe confirmed requested behavior:
-    - `initial_repeat: 0`
-    - `solicit_activity: solicit` with materials spend
-    - mowing jobs sourced from leads (`mow_job_sources: ["lead", ...]`)
-    - passing-grade offer appears and accepted offer becomes active repeat customer next day.
+- Verification: Verified by Playwright run, artifact output check, deterministic probe.
 - Balancing tweak: reduced tycoon starting cash so day one begins below first mower upgrade cost.
   - Added `STARTING_CASH = 220` in `tycoon-poc-text/game.js`.
   - Applied value to initial state and reset path (`initialize()`).
@@ -174,9 +164,7 @@ TODO / Next suggestions:
     - day advance (`report` -> next day)
 - Input behavior updated:
   - While in `processing` mode, gameplay input is ignored (except reset/fullscreen handlers before mode checks).
-- Verification:
-  - `node --check tycoon-poc-text/game.js` passed.
-  - `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174` passed and produced updated artifacts under `tycoon-poc-text/output/verify-tycoon`.
+- Verification: Verified by node --check, pass result check, verify-tycoon.sh.
 - Verification workflow update:
   - `tycoon-poc-text/scripts/verify-tycoon.sh` now archives screenshots/state with global incremental numbering in creation order across runs.
   - Archive path: `tycoon-poc-text/output/verify-tycoon/snapshots`.
@@ -201,55 +189,39 @@ TODO / Next suggestions:
 - Day action UI readability update in `tycoon-poc-text/game.js`:
   - Added indented sub-description line under each day action row to summarize the current opportunity.
   - Sub-descriptions are dynamic (examples: raw leads available for follow-up, qualified+repeat jobs available for mowing, next hardware upgrade affordability).
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - New artifacts: `tycoon-poc-text/output/10-gameplay-web-game` and `tycoon-poc-text/output/10-gameplay-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Added repo-local agent instruction file: `/Users/zkendall/projects/MowGrassMoMoney/AGENTS.md`.
   - Includes explicit requirement to read and append `/Users/zkendall/projects/MowGrassMoMoney/progress.md` after meaningful implementation, verification, or documentation changes.
 - UI text spacing tweak in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/game.js`:
   - Increased indentation for day-action subheader lines (both description + opportunity) to improve visual hierarchy.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/13-gameplay-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/13-gameplay-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Balance adjustment in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/game.js`:
   - Reduced lead qualification chance during `Follow Up Leads` from `0.6` to `0.4`.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/14-gameplay-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/14-gameplay-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Refactor: split `tycoon-poc-text/game.js` into modular files under `tycoon-poc-text/src` with no intended behavior changes.
   - Added modules: `constants.js`, `state.js`, `stateMachine.js`, `jobs.js`, `dayActions.js`, `processing.js`, `keyboard.js`, `render/consoleView.js`, `render/statusPanel.js`, `render/activeCustomersView.js`, `index.js`.
   - Converted top-level `game.js` into a thin loader that imports `src/index.js`.
   - Centralized mode transitions via `stateMachine.js` (`transitionTo`/`forceMode`) to keep flow rules in one place.
 - Docs update:
   - Added a `Code Structure` section to `tycoon-poc-text/README.md` describing the new module layout.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/15-gameplay-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/15-gameplay-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Balance adjustment in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js`:
   - Reduced `Solicit` lead generation chance from `0.68` to `0.45` to make lead acquisition harder.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/16-docs-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/16-docs-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Input compatibility fix in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/keyboard.js`:
   - Expanded selection key handling to accept `event.key === 'Space'` and `event.code === 'Space'` in addition to `' '` / `'Spacebar'`.
   - Applies to both planning job selection and report offer selection.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/17-keyboard-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/17-keyboard-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Clarified lead-state wording in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`:
   - `Follow Up Leads` opportunity now shows `raw leads`.
   - `Mow Lawns` opportunity now shows `qualified leads`.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/18-consoleview-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/18-consoleview-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Input flow update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/processing.js`:
   - Added optional `requireConfirm` parameter to `startProcessing` (default `true`).
   - When `requireConfirm` is `false`, processing now auto-runs `onComplete` after timer expiry instead of waiting for an extra Enter press.
 - End-of-day transition update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js`:
   - Set `requireConfirm: false` for the `nextDay()` transition (`Advancing to next day...`) so returning to day action no longer needs a second Enter.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174` successfully.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/19-dayactions-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/19-dayactions-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Validation:
   - `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/processing.js` passed.
   - `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js` passed.
@@ -257,28 +229,20 @@ TODO / Next suggestions:
   - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js` now logs solicit chance rolls and per-lead follow-up qualification rolls to browser console.
   - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/jobs.js` now logs `randInt` rolls/results.
   - Added `DEBUG_ROLLS` toggle in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/constants.js` (currently `true`).
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/20-constants-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/20-constants-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Replaced narrow debug flag with log-level categories:
   - Removed `DEBUG_ROLLS` and added `LOG_LEVEL` in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/constants.js`.
   - Added `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/logging.js` with level-based logging (`DEBUG`, `INFO`, `WARN`, `ERROR`, `NONE`).
   - Updated roll logging in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/jobs.js` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js` to use `logDebug(...)`.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/21-constants-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/21-constants-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Expanded RNG debug logging coverage in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/jobs.js`:
   - `pick(...)` now logs roll, selected index, and selected value.
   - This completes debug logging for all random checks currently used in gameplay flow (`pick`, `randInt`, solicit chance, follow-up qualification chance).
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/22-jobs-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/22-jobs-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Debug visibility improvement in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js`:
   - `Follow Up Leads` now logs a start summary with raw vs qualified counts.
   - When no raw leads exist, logs per-lead skip reasons (`status=qualified`) so users can see why no roll occurred.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/23-dayactions-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/23-dayactions-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Added deterministic debug-log verification path:
   - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/logging.js` now mirrors emitted logs into `window.__tycoonLogs` (ring buffer).
   - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js` now exposes `debug_log_tail` in `render_game_to_text()` payload.
@@ -286,35 +250,24 @@ TODO / Next suggestions:
     - uses longer action waits so processing callbacks complete,
     - asserts debug roll logs are present (`debug_roll_logs_found: true`),
     - fails verification if no roll logs are found.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/24-verify-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/24-verify-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Added browser-visible logging sanity checks in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`:
   - Startup `INFO` log on initialize.
   - Added `window.tycoonLogTest()` to emit INFO/DEBUG messages on demand and return recent buffered logs.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/25-index-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/25-index-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Startup import mismatch fix in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/game.js`:
   - Root cause: stale mixed ES module cache in Chrome could load mismatched versions (e.g., `logging.js` expecting `LOG_LEVEL` while cached `constants.js` lacked it).
   - Fix: added cache-busting query string to dynamic import of `src/index.js`.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/26-gameplay-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/26-gameplay-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Input handling update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/keyboard.js`:
   - While `processing` mode is active, `Enter` now immediately completes the current processing step even before `awaitingConfirm`, allowing fast skip through progress screens.
 - Console copy update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`:
   - Processing phase now shows `Please wait... (Enter to skip)` before confirm-ready state.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/27-docs-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/27-docs-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Day-action cursor persistence update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js`:
   - Removed end-of-day reset of `state.actionCursor` during `nextDay()` so returning to `day_action` keeps the previously selected action highlighted.
   - New-game/reset flow still initializes cursor to first action via core state reset.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/dayActions.js`.
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/28-run-regression-tests-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/28-run-regression-tests-probe.json`.
+- Verification: Verified by node --check, verify-tycoon.sh, artifact output check.
 - Regression framework upgrade for `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text`:
   - Added deterministic seed override support in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js` via URL query (`?seed=<int>`).
   - Added `seed` to `render_game_to_text()` payload.
@@ -337,64 +290,45 @@ TODO / Next suggestions:
 - Tooling + docs:
   - Added `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/package.json` and lockfile with Playwright dev dependency and regression scripts.
   - Updated `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/README.md` with deterministic seed usage + regression commands.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js`.
-  - Ran golden generation: `node /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js --url http://127.0.0.1:4174 --update-golden`.
-  - Ran pass validation: `node /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js --url http://127.0.0.1:4174`.
+- Verification: Verified by node --check, run-regression-tests.js, golden baseline check, pass validation.
 - Output readability update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`:
   - Changed `render_game_to_text()` serialization to `JSON.stringify(payload, null, 2)` so Playwright-captured `state-*.json` files are pretty-printed.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`.
+- Verification: Verified by node --check.
 - Report text simplification in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`:
   - `follow_up` report now shows only lead outcomes (`Leads qualified`, qualified/raw totals) and omits unrelated revenue/cost/net/job-breakdown lines.
   - `solicit` report now shows only lead outcomes/totals (`Leads generated`, lead totals) and omits unrelated financial/breakdown lines.
   - Detailed financial + job breakdown output remains for mowing and hardware-shop reports.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`.
+- Verification: Verified by node --check.
 - Further solicit/follow-up report trim in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`:
   - Hidden `REGULAR CUSTOMER OFFERS` block for `solicit` and `follow_up` report activities.
   - These report screens now contain only lead-outcome fields relevant to the chosen action.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`.
+- Verification: Verified by node --check.
 - Follow-up report wording update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`:
   - Replaced follow-up summary lines with requested concise format:
     - `You got # new leads!`
     - `Names: ...`
   - Removed follow-up total lines (`Qualified leads available`, `Raw leads remaining`) from report view.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`.
+- Verification: Verified by node --check.
 - Solicit report wording simplification in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`:
   - Replaced solicit summary block with concise format:
     - `You got # new leads!`
     - `Names: ...`
   - Removed solicit total lines (`Total leads now`, `Qualified leads now`, `Raw leads now`) from report view.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`.
+- Verification: Verified by node --check.
 - Report readability tweak in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`:
   - Added blank-line spacing above and below `You got N new leads!` in both `follow_up` and `solicit` report views.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/render/consoleView.js`.
-- Verification:
-  - Ran regression suite after report-text simplification/spacing tweaks:
-    - `node /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js --url http://127.0.0.1:4174`
-  - Result: pass (`status: ok` for all 3 golden scenarios + seed-matrix determinism checks).
-  - No golden baseline updates were required.
+- Verification: Verified by node --check.
+- Verification: Verified by run-regression-tests.js, pass result check, golden baseline check.
 - Verification runner update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon.sh`:
   - Added optional `--headed` flag support to run the Playwright client with a visible browser (`--headless false`).
   - Added explicit verify log output showing browser mode (`headed` vs `headless`).
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174 --headed`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/29-verify-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/29-verify-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Headed verify pacing update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon.sh`:
   - Added a dedicated headed execution path (Playwright inline runner) that uses real-time keypress delays so action steps are visible at human pace.
   - Kept existing fast headless flow unchanged via `web_game_playwright_client.js`.
   - Fixed headed Playwright module resolution by executing the inline runner from `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text`.
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174 --headed` successfully after the pacing update.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/30-verify-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/30-verify-probe.json`.
-- Verification:
-  - Re-ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174 --headed` using human-paced headed flow.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/31-no-change-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/31-no-change-probe.json`.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
+- Verification: Verified by verify-tycoon.sh, Playwright run, artifact output check.
 - Reverted default start-state behavior in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js`:
   - Day-one now starts with empty leads again (original behavior).
 - Added test-only start-state override in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`:
@@ -404,9 +338,7 @@ TODO / Next suggestions:
     - `mode='default'`/`null` clears override and restores default start.
 - Documentation sync:
   - Updated `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/README.md` deterministic hooks section with override usage.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js`.
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`.
+- Verification: Verified by node --check.
 - Refactor: moved start-state override to preset-based state construction in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js`.
   - Added `START_STATE_DEFAULT` and `START_STATE_ALL_ACTIONS` modes.
   - `createInitialState(mode)` now selects a preset default-state object directly.
@@ -416,12 +348,7 @@ TODO / Next suggestions:
   - Removed ad-hoc `applyStartStateOverride()` mutation.
   - Start-state mode is now resolved first, then passed into `resetCoreState(state, mode)`.
   - Preserved query override (`?start_state=all_actions`) and test hook (`window.__tycoonTestSetStartStateOverride`).
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js`.
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`.
-  - Sanity-checked preset behavior via Node import:
-    - default preset leads = 0
-    - `all_actions` preset leads = 2
+- Verification: Verified by node --check, sanity check.
 - Simplified start-state override architecture per feedback:
   - Replaced preset-clone/predicate helpers in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js` with two explicit full-state builders:
     - `createDefaultInitialState()`
@@ -431,10 +358,7 @@ TODO / Next suggestions:
 - Simplified mode branching in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`:
   - Removed generic start-state validation helper usage.
   - Kept a single explicit check for `all_actions`; all other values fall back to `default`.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js`.
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`.
-  - Sanity checked via import: default leads = 0, `all_actions` leads = 2.
+- Verification: Verified by node --check, sanity check.
 - Start-state override mode rename and expansion:
   - Renamed explicit test mode from `all_actions` to `test_all_actions`.
   - Replaced lead-only override with a full mid-game snapshot in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js`:
@@ -447,24 +371,26 @@ TODO / Next suggestions:
   - `window.__tycoonTestSetStartStateOverride('test_all_actions', true)` now uses the renamed mode.
 - Documentation sync:
   - Updated deterministic hook docs in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/README.md` to use `test_all_actions` and describe the full mid-game snapshot.
-- Verification:
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/state.js`.
-  - Ran `node --check /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/index.js`.
-  - Sanity-checked `createInitialState('test_all_actions')` payload shape (repeat/leads/jobs/offers/report all populated).
-- Verification:
-  - Ran `./tycoon-poc-text/scripts/verify-tycoon.sh http://127.0.0.1:4174 --headed`.
-  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/35-docs-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/35-docs-probe.json`.
+- Verification: Verified by node --check, sanity check.
+- Verification: Verified by verify-tycoon.sh, artifact output check.
 - Verification script consolidation:
   - Removed `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon.sh` wrapper.
   - Kept single implementation script: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
-- Verification: Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
+- Verification: Verified by verify-tycoon-quick.sh.
 - Expanded verification choreography in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh` to cover additional day actions.
   - Verify sequence now explicitly attempts: `Solicit` -> `Follow Up Leads` -> `Mow Lawns` -> `Shop for New Hardware` in one run.
   - Updated both headless action JSON and headed keypress path.
   - Reduced headless iterations from 2 to 1 because the single choreography now spans multiple day transitions/actions.
-- Verification: Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
+- Verification: Verified by verify-tycoon-quick.sh.
 - Verification script readability refactor:
   - Extracted headless choreography payload from inline `--actions-json` into `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-actions.json`.
   - Extracted headed Playwright inline `node -e` logic into `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-headed-runner.js`.
   - Updated `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh` to reference the extracted files via `--actions-file` and runner script invocation.
-- Verification: Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh`.
+- Verification: Verified by verify-tycoon-quick.sh.
+- Progress log cleanup in `/Users/zkendall/projects/MowGrassMoMoney/progress.md`:
+  - Replaced verbose verification sub-bullets with concise single-line summaries in the form `Verification: Verified by ...`, inferred from each original verification block.
+- Progress log format correction in `/Users/zkendall/projects/MowGrassMoMoney/progress.md`:
+  - Normalized remaining `Verification: Ran ...` lines to `Verification: Verified by ...` for consistency with the new concise style.
+- Verification:
+  - Ran `./tycoon-poc-text/scripts/verify-tycoon-quick.sh http://127.0.0.1:4174 --headed`.
+  - Artifacts: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/40-no-change-web-game` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/40-no-change-probe.json`.
