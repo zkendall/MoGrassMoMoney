@@ -3,14 +3,16 @@ const path = require('node:path');
 const { test, expect } = require('playwright/test');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const STEP_PLANS_PATH = path.join(ROOT_DIR, 'scripts', 'regression-step-plans.json');
+const STEP_PLANS_PATH = path.join(__dirname, 'fixtures', 'regression-step-plans.json');
 const STEP_PLANS = JSON.parse(fs.readFileSync(STEP_PLANS_PATH, 'utf8'));
 const GOLDEN_DIR = path.join(__dirname, 'golden');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'output', 'regression-tests');
 const SUMMARY_PATH = path.join(OUTPUT_DIR, 'latest-summary.json');
+const HEADED_ACTION_DELAY_MS = 180;
 const UPDATE_GOLDEN = ['1', 'true', 'yes'].includes(
   String(process.env.UPDATE_GOLDEN || '').toLowerCase(),
 );
+const DEFAULT_START_STATE = 'default';
 
 const scenarioResults = {};
 
@@ -29,6 +31,21 @@ function summaryPayload() {
 function writeSummary() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   fs.writeFileSync(SUMMARY_PATH, JSON.stringify(summaryPayload(), null, 2));
+}
+
+function readScenarioConfig(name) {
+  const scenario = STEP_PLANS[name];
+  if (!scenario || typeof scenario !== 'object') {
+    throw new Error(`Missing scenario config: ${name}`);
+  }
+  if (!Array.isArray(scenario.steps)) {
+    throw new Error(`Scenario "${name}" is missing steps[]`);
+  }
+  return {
+    seed: Number.isFinite(scenario.seed) ? scenario.seed : 2,
+    start_state: typeof scenario.start_state === 'string' ? scenario.start_state : DEFAULT_START_STATE,
+    steps: scenario.steps,
+  };
 }
 
 function readExpected(name) {
@@ -83,17 +100,29 @@ async function completeProcessing(page, durationMs, requireConfirm) {
   return waitForModeNot(page, 'processing', 6_000);
 }
 
-async function openSeededPage(page, seed) {
-  await page.goto(`/?seed=${seed}`, { waitUntil: 'domcontentloaded' });
+async function openScenarioPage(page, scenario) {
+  const params = new URLSearchParams();
+  if (Number.isFinite(scenario.seed)) {
+    params.set('seed', String(scenario.seed));
+  }
+  if (scenario.start_state && scenario.start_state !== DEFAULT_START_STATE) {
+    params.set('start_state', scenario.start_state);
+  }
+  const query = params.toString();
+  const pathWithQuery = query ? `/?${query}` : '/';
+  await page.goto(pathWithQuery, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(300);
 }
 
-async function executeStep(page, step) {
+async function executeStep(page, step, actionDelayMs) {
   const times = Number.isFinite(step.times) ? step.times : 1;
 
   if (step.op === 'press') {
     for (let i = 0; i < times; i += 1) {
       await page.keyboard.press(step.key);
+      if (actionDelayMs > 0) {
+        await page.waitForTimeout(actionDelayMs);
+      }
     }
     return;
   }
@@ -154,15 +183,12 @@ async function executeStep(page, step) {
   throw new Error(`Unknown regression step op: ${step.op}`);
 }
 
-async function executePlan(page, planName) {
-  const steps = STEP_PLANS[planName];
-  if (!Array.isArray(steps)) {
-    throw new Error(`Missing step plan: ${planName}`);
-  }
+async function executePlan(page, planName, steps) {
+  const actionDelayMs = test.info().project.use.headless === false ? HEADED_ACTION_DELAY_MS : 0;
   for (let i = 0; i < steps.length; i += 1) {
     const step = steps[i];
     try {
-      await executeStep(page, step);
+      await executeStep(page, step, actionDelayMs);
     } catch (error) {
       const prefix = `Step ${i + 1}/${steps.length}${step.desc ? ` (${step.desc})` : ''}`;
       throw new Error(`${prefix} failed: ${error.message || error}`);
@@ -258,8 +284,9 @@ test.afterAll(() => {
 });
 
 test('solicit_report', async ({ page }) => {
-  await openSeededPage(page, 2);
-  await executePlan(page, 'solicit_report');
+  const scenario = readScenarioConfig('solicit_report');
+  await openScenarioPage(page, scenario);
+  await executePlan(page, 'solicit_report', scenario.steps);
   const result = await readState(page);
   const snapshot = pickScenarioSnapshot('solicit_report', result);
   assertOrUpdateGolden('solicit_report', snapshot);
@@ -267,8 +294,9 @@ test('solicit_report', async ({ page }) => {
 });
 
 test('follow_up_report', async ({ page }) => {
-  await openSeededPage(page, 2);
-  await executePlan(page, 'follow_up_report');
+  const scenario = readScenarioConfig('follow_up_report');
+  await openScenarioPage(page, scenario);
+  await executePlan(page, 'follow_up_report', scenario.steps);
   const result = await readState(page);
   const snapshot = pickScenarioSnapshot('follow_up_report', result);
   assertOrUpdateGolden('follow_up_report', snapshot);
@@ -276,8 +304,9 @@ test('follow_up_report', async ({ page }) => {
 });
 
 test('mow_offer_accept', async ({ page }) => {
-  await openSeededPage(page, 2);
-  await executePlan(page, 'mow_offer_accept');
+  const scenario = readScenarioConfig('mow_offer_accept');
+  await openScenarioPage(page, scenario);
+  await executePlan(page, 'mow_offer_accept', scenario.steps);
   const result = await readState(page);
   const snapshot = pickScenarioSnapshot('mow_offer_accept', result);
   assertOrUpdateGolden('mow_offer_accept', snapshot);

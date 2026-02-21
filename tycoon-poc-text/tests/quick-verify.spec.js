@@ -1,19 +1,15 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { test, expect } = require('playwright/test');
-const { writeSummary } = require('../scripts/summarize-verify-states.js');
+const { writeSummary } = require('./helpers/summarize-verify-states.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const OUTPUT_ROOT = path.join(ROOT_DIR, 'output');
 const VERIFY_LABEL = 'verify';
-
-function withStartState(urlString) {
-  const url = new URL(urlString);
-  if (!url.searchParams.has('start_state')) {
-    url.searchParams.set('start_state', 'test_all_actions');
-  }
-  return url.toString();
-}
+const HEADED_ACTION_DELAY_MS = 450;
+const DEFAULT_START_STATE = 'default';
+const QUICK_STEP_PLANS_PATH = path.join(__dirname, 'fixtures', 'quick-verify-step-plans.json');
+const QUICK_STEP_PLANS = JSON.parse(fs.readFileSync(QUICK_STEP_PLANS_PATH, 'utf8'));
 
 function timestampRunId() {
   const d = new Date();
@@ -32,9 +28,38 @@ function timestampRunId() {
   ].join('');
 }
 
+function readScenarioConfig(name) {
+  const scenario = QUICK_STEP_PLANS[name];
+  if (!scenario || typeof scenario !== 'object') {
+    throw new Error(`Missing quick-verify scenario config: ${name}`);
+  }
+  if (!Array.isArray(scenario.steps)) {
+    throw new Error(`Quick-verify scenario "${name}" is missing steps[]`);
+  }
+  return {
+    seed: Number.isFinite(scenario.seed) ? scenario.seed : null,
+    start_state: typeof scenario.start_state === 'string'
+      ? scenario.start_state
+      : DEFAULT_START_STATE,
+    steps: scenario.steps,
+  };
+}
+
+function buildScenarioUrl(baseURL, scenario) {
+  const url = new URL(baseURL);
+  if (Number.isFinite(scenario.seed)) {
+    url.searchParams.set('seed', String(scenario.seed));
+  }
+  if (scenario.start_state && scenario.start_state !== DEFAULT_START_STATE) {
+    url.searchParams.set('start_state', scenario.start_state);
+  }
+  return url.toString();
+}
+
 test('quick_verify_walkthrough', async ({ page }, testInfo) => {
+  const scenario = readScenarioConfig('quick_verify_walkthrough');
   const baseURL = testInfo.project.use.baseURL || 'http://127.0.0.1:4174';
-  const verifyUrl = withStartState(baseURL);
+  const verifyUrl = buildScenarioUrl(baseURL, scenario);
   const runId = timestampRunId();
   const webGameDir = path.join(OUTPUT_ROOT, `${runId}-${VERIFY_LABEL}-web-game`);
   const probePath = path.join(OUTPUT_ROOT, `${runId}-${VERIFY_LABEL}-probe.json`);
@@ -43,7 +68,7 @@ test('quick_verify_walkthrough', async ({ page }, testInfo) => {
   fs.mkdirSync(webGameDir, { recursive: true });
 
   const isHeadless = testInfo.project.use.headless !== false;
-  const actionDelayMs = isHeadless ? 0 : 250;
+  const actionDelayMs = isHeadless ? 0 : HEADED_ACTION_DELAY_MS;
   const pollDelayMs = isHeadless ? 10 : 60;
 
   page.on('console', (msg) => {
@@ -113,62 +138,100 @@ test('quick_verify_walkthrough', async ({ page }, testInfo) => {
     }
   }
 
-  async function finishProcessing(delayMs = 1200) {
+  async function completeProcessing(durationMs = 1200, requireConfirm = true) {
     await waitForMode('processing');
-    if (!isHeadless && delayMs > 0) {
-      await page.waitForTimeout(delayMs);
+    if (!isHeadless && durationMs > 0) {
+      await page.waitForTimeout(durationMs);
     }
-    await press('Enter', 200);
+    if (requireConfirm) {
+      await press('Enter', 350);
+    }
     await waitForModeNot('processing');
+  }
+
+  async function executeStep(step) {
+    const times = Number.isFinite(step.times) ? step.times : 1;
+
+    if (step.op === 'press') {
+      const waitMs = Number.isFinite(step.wait_ms) ? step.wait_ms : actionDelayMs;
+      for (let i = 0; i < times; i += 1) {
+        await press(step.key, waitMs);
+      }
+      return;
+    }
+
+    if (step.op === 'wait_mode') {
+      await waitForMode(step.mode, step.timeout_ms || 6000);
+      return;
+    }
+
+    if (step.op === 'assert_mode') {
+      const state = await readState();
+      expect(state.mode).toBe(step.mode);
+      return;
+    }
+
+    if (step.op === 'move_day_action_cursor') {
+      await moveDayActionCursorTo(step.cursor);
+      return;
+    }
+
+    if (step.op === 'complete_processing') {
+      await completeProcessing(step.duration_ms || 1200, step.require_confirm !== false);
+      return;
+    }
+
+    if (step.op === 'select_planning_jobs_up_to') {
+      const planning = await waitForMode('planning');
+      const maxSelections = Math.min(step.max || 1, (planning.planning_jobs || []).length);
+      const toggleWaitMs = Number.isFinite(step.toggle_wait_ms) ? step.toggle_wait_ms : actionDelayMs;
+      const moveWaitMs = Number.isFinite(step.move_wait_ms) ? step.move_wait_ms : actionDelayMs;
+      for (let i = 0; i < maxSelections; i += 1) {
+        await press('Space', toggleWaitMs);
+        if (i < maxSelections - 1) {
+          await press('ArrowDown', moveWaitMs);
+        }
+      }
+      return;
+    }
+
+    if (step.op === 'accept_first_pending_offer_if_any') {
+      const state = await readState();
+      if ((state.pending_regular_offers || []).length > 0) {
+        const waitMs = Number.isFinite(step.wait_ms) ? step.wait_ms : actionDelayMs;
+        await press('Space', waitMs);
+      }
+      return;
+    }
+
+    if (step.op === 'assert_last_report_activity') {
+      const state = await readState();
+      expect(state.last_report?.activity).toBe(step.activity);
+      return;
+    }
+
+    throw new Error(`Unknown quick-verify step op: ${step.op}`);
+  }
+
+  async function executePlan(steps) {
+    for (let i = 0; i < steps.length; i += 1) {
+      const step = steps[i];
+      try {
+        await executeStep(step);
+      } catch (error) {
+        const prefix = `Step ${i + 1}/${steps.length}${step.desc ? ` (${step.desc})` : ''}`;
+        throw new Error(`${prefix} failed: ${error.message || error}`);
+      }
+    }
   }
 
   await page.goto(verifyUrl, { waitUntil: 'domcontentloaded' });
   await waitForRenderApi();
   if (!isHeadless) {
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(700);
   }
 
-  await moveDayActionCursorTo(0);
-  await press('Enter');
-  await finishProcessing(1300);
-  await waitForMode('report');
-  await press('Enter', 250);
-  await waitForMode('day_action');
-
-  await moveDayActionCursorTo(1);
-  await press('Enter');
-  await finishProcessing(1100);
-  await waitForMode('report');
-  await press('Enter', 250);
-  await waitForMode('day_action');
-
-  await moveDayActionCursorTo(2);
-  await press('Enter');
-  const planning = await waitForMode('planning');
-  const maxSelections = Math.min(3, (planning.planning_jobs || []).length);
-  for (let i = 0; i < maxSelections; i += 1) {
-    await press('Space', 200);
-    if (i < maxSelections - 1) await press('ArrowDown', 180);
-  }
-  await press('Enter', 250);
-  await waitForMode('performance');
-  for (let i = 0; i < 12; i += 1) await press('ArrowUp', 30);
-  await press('Enter', 250);
-  await finishProcessing(1200);
-  const mowReport = await waitForMode('report');
-  if ((mowReport.pending_regular_offers || []).length) {
-    await press('Space', 200);
-  }
-  await press('Enter', 250);
-  await waitForMode('day_action');
-
-  await moveDayActionCursorTo(3);
-  await press('Enter');
-  await finishProcessing(1000);
-  await waitForMode('hardware_shop');
-  await press('Enter', 250);
-  await finishProcessing(900);
-  await waitForMode('report');
+  await executePlan(scenario.steps);
 
   await page.screenshot({ path: path.join(webGameDir, 'shot-0.png'), fullPage: true });
   const stateText = await page.evaluate(() => {

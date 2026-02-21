@@ -1,0 +1,41 @@
+{
+  "quick_verify_walkthrough": {
+    "seed": 90210,
+    "start_state": "test_all_actions",
+    "steps": [
+      { "desc": "Move day action cursor to Solicit", "op": "move_day_action_cursor", "cursor": 0 },
+      { "desc": "Confirm solicit action", "op": "press", "key": "Enter" },
+      { "desc": "Finish solicit processing", "op": "complete_processing", "duration_ms": 1300, "require_confirm": true },
+      { "desc": "Wait for solicit report", "op": "wait_mode", "mode": "report" },
+      { "desc": "Advance report", "op": "press", "key": "Enter", "wait_ms": 450 },
+      { "desc": "Wait for day action", "op": "wait_mode", "mode": "day_action" },
+      { "desc": "Move day action cursor to Follow Up Leads", "op": "move_day_action_cursor", "cursor": 1 },
+      { "desc": "Confirm follow-up action", "op": "press", "key": "Enter" },
+      { "desc": "Finish follow-up processing", "op": "complete_processing", "duration_ms": 1100, "require_confirm": true },
+      { "desc": "Wait for follow-up report", "op": "wait_mode", "mode": "report" },
+      { "desc": "Advance report", "op": "press", "key": "Enter", "wait_ms": 450 },
+      { "desc": "Wait for day action", "op": "wait_mode", "mode": "day_action" },
+      { "desc": "Move day action cursor to Mow Lawns", "op": "move_day_action_cursor", "cursor": 2 },
+      { "desc": "Confirm mow action", "op": "press", "key": "Enter" },
+      { "desc": "Wait for planning mode", "op": "wait_mode", "mode": "planning" },
+      { "desc": "Select up to three planning jobs", "op": "select_planning_jobs_up_to", "max": 3, "toggle_wait_ms": 320, "move_wait_ms": 280 },
+      { "desc": "Confirm selected jobs", "op": "press", "key": "Enter", "wait_ms": 450 },
+      { "desc": "Wait for performance mode", "op": "wait_mode", "mode": "performance" },
+      { "desc": "Raise representative mow score", "op": "press", "key": "ArrowUp", "times": 12, "wait_ms": 80 },
+      { "desc": "Resolve mowing day", "op": "press", "key": "Enter", "wait_ms": 450 },
+      { "desc": "Finish mow processing", "op": "complete_processing", "duration_ms": 1200, "require_confirm": true },
+      { "desc": "Wait for mow report", "op": "wait_mode", "mode": "report" },
+      { "desc": "Accept pending regular offer when present", "op": "accept_first_pending_offer_if_any", "wait_ms": 320 },
+      { "desc": "Advance report", "op": "press", "key": "Enter", "wait_ms": 450 },
+      { "desc": "Wait for day action", "op": "wait_mode", "mode": "day_action" },
+      { "desc": "Move day action cursor to Shop for New Hardware", "op": "move_day_action_cursor", "cursor": 3 },
+      { "desc": "Confirm shop action", "op": "press", "key": "Enter" },
+      { "desc": "Finish transition to hardware shop", "op": "complete_processing", "duration_ms": 1000, "require_confirm": true },
+      { "desc": "Wait for hardware shop mode", "op": "wait_mode", "mode": "hardware_shop" },
+      { "desc": "Confirm hardware shop selection", "op": "press", "key": "Enter", "wait_ms": 450 },
+      { "desc": "Finish hardware shop processing", "op": "complete_processing", "duration_ms": 900, "require_confirm": true },
+      { "desc": "Wait for hardware report", "op": "wait_mode", "mode": "report" },
+      { "desc": "Ensure report activity is hardware shop", "op": "assert_last_report_activity", "activity": "shop_hardware" }
+    ]
+  }
+}

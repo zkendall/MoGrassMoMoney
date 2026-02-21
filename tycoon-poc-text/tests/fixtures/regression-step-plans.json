@@ -1,0 +1,46 @@
+{
+  "solicit_report": {
+    "seed": 2,
+    "start_state": "default",
+    "steps": [
+      { "desc": "Start on day action", "op": "assert_mode", "mode": "day_action" },
+      { "desc": "Confirm solicit", "op": "press", "key": "Enter" },
+      { "desc": "Finish solicit processing", "op": "complete_processing", "duration_ms": 1200, "require_confirm": true },
+      { "desc": "Ensure solicit report is shown", "op": "assert_last_report_activity", "activity": "solicit" }
+    ]
+  },
+  "follow_up_report": {
+    "seed": 2,
+    "start_state": "test_regression_follow_up",
+    "steps": [
+      { "desc": "Move to Follow Up Leads", "op": "press", "key": "ArrowDown" },
+      { "desc": "Confirm follow-up action", "op": "press", "key": "Enter" },
+      { "desc": "Finish follow-up processing", "op": "complete_processing", "duration_ms": 1000, "require_confirm": true },
+      { "desc": "Ensure follow-up report is shown", "op": "assert_last_report_activity", "activity": "follow_up" }
+    ]
+  },
+  "mow_offer_accept": {
+    "seed": 2,
+    "start_state": "test_regression_mow_offer_accept",
+    "steps": [
+      { "desc": "Start on day action", "op": "wait_mode", "mode": "day_action" },
+      { "desc": "Move to Mow Lawns", "op": "press", "key": "ArrowDown", "times": 2 },
+      { "desc": "Confirm mow action", "op": "press", "key": "Enter" },
+      { "desc": "Enter planning mode", "op": "wait_mode", "mode": "planning" },
+      { "desc": "Ensure planning has at least one job", "op": "assert_min_planning_jobs", "min": 1 },
+      { "desc": "Select first planning job", "op": "press", "key": "Space" },
+      { "desc": "Confirm selected jobs", "op": "press", "key": "Enter" },
+      { "desc": "Enter performance mode", "op": "wait_mode", "mode": "performance" },
+      { "desc": "Increase score for passing result", "op": "press", "key": "ArrowUp", "times": 22 },
+      { "desc": "Resolve mowing day", "op": "press", "key": "Enter" },
+      { "desc": "Finish mow processing", "op": "complete_processing", "duration_ms": 1100, "require_confirm": true },
+      { "desc": "Ensure mow report is shown", "op": "assert_last_report_activity", "activity": "mow" },
+      { "desc": "Ensure at least one pending regular offer exists", "op": "assert_pending_offers", "min": 1 },
+      { "desc": "Accept first regular offer", "op": "press", "key": "Space" },
+      { "desc": "Advance to next day", "op": "press", "key": "Enter" },
+      { "desc": "Finish day advance processing", "op": "complete_processing", "duration_ms": 700, "require_confirm": false },
+      { "desc": "Return to day action mode", "op": "wait_mode", "mode": "day_action" },
+      { "desc": "Ensure repeat customers increased", "op": "assert_repeat_customers", "min": 1 }
+    ]
+  }
+}

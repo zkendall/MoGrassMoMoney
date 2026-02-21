@@ -48,4 +48,4 @@ flowchart LR
 - Mode safety is centralized in `src/stateMachine.js`, while transition timing is mediated by `src/processing.js`.
 - Economic outcomes and customer lifecycle behavior are concentrated in `src/dayActions.js` + `src/jobs.js`.
 - Regression and quick-verify suites now both run under Playwright Test (`tests/regression.spec.js`, `tests/quick-verify.spec.js`).
-- Quick verify is deterministic by default because the quick spec appends `?start_state=test_all_actions` unless overridden.
+- Regression and quick-verify flows are fixture-driven (`tests/fixtures/*.json`) and include per-scenario `start_state` metadata.

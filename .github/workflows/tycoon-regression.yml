@@ -37,8 +37,6 @@ jobs:
 
       - name: Run Regression Suite
         working-directory: tycoon-poc-text
-        env:
-          TYCOON_BASE_URL: http://127.0.0.1:4174
         run: npx playwright test tests/regression.spec.js --config=playwright.config.js
 
       - name: Upload Regression Summary

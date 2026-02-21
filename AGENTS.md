@@ -1,5 +1,12 @@
 # Repository Agent Notes
 
+
+## Learning Guidelines
+
+- If I correct you, then see if there is a generalized principle you can learn from it and document in this or other doc files.
+- If I instruct you on how to do something coding related, then see if there is a generalized principle you can learn from it and document in this or other doc files.
+- Keep guidelines direct and concise.
+
 ## Progress Log Requirement
 
 - Keep `/Users/zkendall/projects/MowGrassMoMoney/progress.md` up to date.

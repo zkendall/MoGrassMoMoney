@@ -9,6 +9,7 @@ import { renderConsoleView } from './render/consoleView.js';
 import { drawStatusPanel } from './render/statusPanel.js';
 import {
   createInitialState,
+  isKnownStartState,
   resetCoreState,
   START_STATE_TEST_ALL_ACTIONS,
   START_STATE_DEFAULT,
@@ -39,8 +40,7 @@ function parseStartStateOverride() {
   const raw = params.get(QUERY_START_STATE_PARAM);
   if (!raw) return START_STATE_DEFAULT;
   const normalized = String(raw).trim().toLowerCase();
-  if (normalized === START_STATE_TEST_ALL_ACTIONS) return START_STATE_TEST_ALL_ACTIONS;
-  return START_STATE_DEFAULT;
+  return isKnownStartState(normalized) ? normalized : START_STATE_DEFAULT;
 }
 
 function render() {
@@ -63,6 +63,8 @@ function initialize() {
   forceMode(state, 'day_action');
   if (activeStartStateMode === START_STATE_TEST_ALL_ACTIONS) {
     state.note = 'Test start override active: mid-game all-actions snapshot loaded.';
+  } else if (activeStartStateMode !== START_STATE_DEFAULT) {
+    state.note = `Test start override active: ${activeStartStateMode}.`;
   } else {
     state.note = 'Choose how to spend the day.';
   }
@@ -172,12 +174,14 @@ window.__tycoonTestSetLeads = ({ count = 1, status = 'qualified' } = {}) => {
   return state.leads.length;
 };
 window.__tycoonTestSetStartStateOverride = (mode = null, applyNow = true) => {
-  if (mode === null || mode === '' || mode === START_STATE_DEFAULT) {
+  if (mode === null || mode === '') {
     testStartStateOverride = START_STATE_DEFAULT;
-  } else if (mode === START_STATE_TEST_ALL_ACTIONS) {
-    testStartStateOverride = START_STATE_TEST_ALL_ACTIONS;
   } else {
-    return false;
+    const normalized = String(mode).trim().toLowerCase();
+    if (!isKnownStartState(normalized)) {
+      return false;
+    }
+    testStartStateOverride = normalized;
   }
   if (applyNow) initialize();
   return true;

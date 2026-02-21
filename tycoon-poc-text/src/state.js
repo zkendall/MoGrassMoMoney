@@ -2,6 +2,24 @@ import { STARTING_CASH } from './constants.js';
 
 export const START_STATE_DEFAULT = 'default';
 export const START_STATE_TEST_ALL_ACTIONS = 'test_all_actions';
+export const START_STATE_TEST_REGRESSION_FOLLOW_UP = 'test_regression_follow_up';
+export const START_STATE_TEST_REGRESSION_MOW_OFFER_ACCEPT = 'test_regression_mow_offer_accept';
+
+function createTestLead(id, leadStatus) {
+  const sequence = id - 8999;
+  return {
+    id,
+    name: `T-${String(sequence).padStart(2, '0')}`,
+    isRepeat: false,
+    lawn_size: 'small',
+    complexity: 'low',
+    pattern_preference: 'none',
+    base_payout: 65,
+    days_since_service: 0,
+    distance_cost: 3,
+    lead_status: leadStatus,
+  };
+}
 
 function createDefaultInitialState() {
   return {
@@ -248,9 +266,45 @@ function createTestAllActionsInitialState() {
   };
 }
 
+function createRegressionFollowUpInitialState() {
+  const next = createDefaultInitialState();
+  next.leads = [
+    createTestLead(9000, 'raw'),
+    createTestLead(9001, 'raw'),
+    createTestLead(9002, 'raw'),
+  ];
+  next.note = 'Regression start state loaded: follow_up';
+  return next;
+}
+
+function createRegressionMowOfferAcceptInitialState() {
+  const next = createDefaultInitialState();
+  next.leads = [
+    createTestLead(9000, 'qualified'),
+    createTestLead(9001, 'qualified'),
+  ];
+  next.note = 'Regression start state loaded: mow_offer_accept';
+  return next;
+}
+
+export function isKnownStartState(startStateMode) {
+  return [
+    START_STATE_DEFAULT,
+    START_STATE_TEST_ALL_ACTIONS,
+    START_STATE_TEST_REGRESSION_FOLLOW_UP,
+    START_STATE_TEST_REGRESSION_MOW_OFFER_ACCEPT,
+  ].includes(startStateMode);
+}
+
 export function createInitialState(startStateMode = START_STATE_DEFAULT) {
   if (startStateMode === START_STATE_TEST_ALL_ACTIONS) {
     return createTestAllActionsInitialState();
+  }
+  if (startStateMode === START_STATE_TEST_REGRESSION_FOLLOW_UP) {
+    return createRegressionFollowUpInitialState();
+  }
+  if (startStateMode === START_STATE_TEST_REGRESSION_MOW_OFFER_ACCEPT) {
+    return createRegressionMowOfferAcceptInitialState();
   }
   return createDefaultInitialState();
 }

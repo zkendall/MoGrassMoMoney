@@ -49,8 +49,10 @@ open "http://127.0.0.1:4174/?seed=2"
 - `window.setTycoonSeed(seed)` resets the run with a new deterministic seed.
 - `window.__tycoonTestSetStartStateOverride(mode, applyNow)` sets a test-only start-state override:
   - `mode='test_all_actions'` loads an explicit mid-game snapshot with populated repeat customers, leads (raw + qualified), planning jobs, accepted jobs, pending offers, and prior report data.
+  - `mode='test_regression_follow_up'` loads a day-action start with three raw leads for follow-up regression coverage.
+  - `mode='test_regression_mow_offer_accept'` loads a day-action start with two qualified leads for mowing-offer regression coverage.
   - `mode='default'` (or `null`) clears the override and restores normal start behavior.
-  - Optional URL shortcut: `?start_state=test_all_actions`.
+  - Optional URL shortcut: `?start_state=<mode>`.
 
 ## Code Structure
 
@@ -67,33 +69,60 @@ open "http://127.0.0.1:4174/?seed=2"
 
 - Architecture diagram: [`SYSTEM-DESIGN.md`](SYSTEM-DESIGN.md)
 
-## Snapshot Naming Guideline
+## Testing
 
-- Quick verify runs through Playwright Test via `npx playwright test tests/quick-verify.spec.js`.
-- Run verification with:
-  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/quick-verify.spec.js --config=playwright.config.js`
-  - headed mode: `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/quick-verify.spec.js --config=playwright.config.js --headed`
-- Each run creates timestamped artifacts directly under `output/`:
-  - `<UTC-timestamp>-verify-web-game/`
-  - matching probe file: `<UTC-timestamp>-verify-probe.json`
+This project uses Playwright Test for regression and quick-verify flows, plus a small RNG determinism unit test.
 
-## Regression Tests
+### Setup
 
-- Install test dependencies:
-  - `npm --prefix tycoon-poc-text install`
-  - `npx --prefix tycoon-poc-text playwright install chromium`
-- Playwright Test config: `tycoon-poc-text/playwright.config.js`.
-- Playwright regression spec: `tycoon-poc-text/tests/regression.spec.js`.
-- Playwright quick-verify spec: `tycoon-poc-text/tests/quick-verify.spec.js`.
-- Run RNG determinism unit test:
-  - `npm --prefix tycoon-poc-text run test:rng`
-- Run the golden scenario suite (3 scenarios):
-  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/regression.spec.js --config=playwright.config.js`
-- Run quick verify walkthrough:
-  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/quick-verify.spec.js --config=playwright.config.js`
-- Run headed regression:
-  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/regression.spec.js --config=playwright.config.js --headed`
-- Update golden baselines after intentional behavior changes:
-  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 UPDATE_GOLDEN=1 npx playwright test tests/regression.spec.js --config=playwright.config.js`
-- Script note:
-  - `test:regression`, `test:regression:update`, and `verify:quick` npm scripts call Playwright Test directly.
+Install dependencies once:
+
+- `npm --prefix tycoon-poc-text install`
+- `npx --prefix tycoon-poc-text playwright install chromium`
+
+Primary test files:
+
+- Config: `tycoon-poc-text/playwright.config.js`
+- Regression suite: `tycoon-poc-text/tests/regression.spec.js`
+- Regression scenarios fixture (seed/start state/steps): `tycoon-poc-text/tests/fixtures/regression-step-plans.json`
+- Quick-verify walkthrough: `tycoon-poc-text/tests/quick-verify.spec.js`
+- Quick-verify fixture (seed/start state/steps): `tycoon-poc-text/tests/fixtures/quick-verify-step-plans.json`
+
+### Common Commands
+
+Run RNG determinism unit test:
+
+- `npm --prefix tycoon-poc-text run test:rng`
+
+Run the golden regression suite (3 scenarios):
+
+- `cd tycoon-poc-text && npx playwright test tests/regression.spec.js --config=playwright.config.js`
+
+Run quick verify:
+
+- `cd tycoon-poc-text && npx playwright test tests/quick-verify.spec.js --config=playwright.config.js`
+- Headed mode: `cd tycoon-poc-text && npx playwright test tests/quick-verify.spec.js --config=playwright.config.js --headed`
+
+Run headed regression:
+
+- `cd tycoon-poc-text && npx playwright test tests/regression.spec.js --config=playwright.config.js --headed`
+
+Update golden baselines after intentional behavior changes:
+
+- `cd tycoon-poc-text && UPDATE_GOLDEN=1 npx playwright test tests/regression.spec.js --config=playwright.config.js`
+
+### Trace Recording and Replay
+
+To record and inspect a full quick-verify run:
+
+- Record trace (headed): `cd tycoon-poc-text && npx playwright test tests/quick-verify.spec.js --config=playwright.config.js --headed --trace on`
+- Open latest trace: `cd tycoon-poc-text && npx playwright show-trace "$(ls -t output/regression-tests/test-results/**/trace.zip | head -n 1)"`
+
+### Artifacts and Notes
+
+Quick-verify outputs are timestamped under `output/`:
+
+- `<UTC-timestamp>-verify-web-game/`
+- matching probe file: `<UTC-timestamp>-verify-probe.json`
+
+NPM scripts `test:regression`, `test:regression:update`, and `verify:quick` call Playwright Test directly. Set `TYCOON_BASE_URL` only when you need a non-default target URL.
