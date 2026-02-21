@@ -463,3 +463,18 @@ TODO / Next suggestions:
   - Ran headed regression suite: `npm --prefix tycoon-poc-text run test:regression -- --url http://127.0.0.1:4174 --headed`.
   - Result: pass (`status: ok`) across scenarios `solicit_report`, `follow_up_report`, and `mow_offer_accept`.
   - Summary artifact: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/output/regression-tests/latest-summary.json`.
+- Regression test scope simplification:
+  - Removed seed-matrix-only pathway from tooling/docs and deleted `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-seed-matrix.sh`.
+  - Added deterministic RNG unit test script: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/test-rng-determinism.js`.
+  - Updated scripts/docs/CI to use `test:rng` + scenario regressions (`package.json`, `README.md`, `.github/workflows/tycoon-regression.yml`).
+  - Removed unused `seed_summary` plan from `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/regression-step-plans.json`.
+- Verification: Verified by `node --check` (updated scripts), `npm --prefix /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text run test:rng`, and `npm --prefix /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text run test:regression -- --url http://127.0.0.1:4174`.
+- Documentation: Added tycoon system design diagrams in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/SYSTEM-DESIGN.md` and linked from `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/README.md`.
+- Documentation: Updated verification Mermaid labels in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/SYSTEM-DESIGN.md` to avoid lexical parse failures.
+- Verify runner migration toward JS-first execution:
+  - Added `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.js` as the primary quick-verify orchestrator (arg parsing, default test start-state URL handling, label/history integration, syntax check, Playwright run, probe summary, history persistence).
+  - Switched output run IDs from incremental counters to UTC timestamps (`<timestamp>-<label>-*`).
+  - Refactored `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/compute-verify-label.js` and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/summarize-verify-states.js` to expose reusable functions for the JS orchestrator while preserving CLI behavior.
+  - Reduced `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh` to a compatibility wrapper that delegates to the JS runner.
+  - Added npm script `verify:quick` and updated `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/README.md` verify docs for JS entrypoint + timestamped artifacts.
+- Verification: Verified by `node --check` (verify scripts), `bash -n /Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh`, and `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh http://127.0.0.1:4174`.

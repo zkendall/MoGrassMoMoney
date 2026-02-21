@@ -45,6 +45,13 @@ function summarizeStates(states, runId, label) {
   };
 }
 
+function writeSummary(statesDir, outputPath, runId, label) {
+  const states = readStates(statesDir);
+  const summary = summarizeStates(states, runId, label);
+  fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+  return summary;
+}
+
 function main() {
   const statesDir = process.argv[2];
   const outputPath = process.argv[3];
@@ -58,11 +65,16 @@ function main() {
     process.exit(1);
   }
 
-  const states = readStates(statesDir);
-  const summary = summarizeStates(states, runId, label);
-
-  fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+  const summary = writeSummary(statesDir, outputPath, runId, label);
   console.log(JSON.stringify(summary, null, 2));
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  readStates,
+  summarizeStates,
+  writeSummary,
+};

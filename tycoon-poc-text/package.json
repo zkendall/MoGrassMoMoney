@@ -5,7 +5,8 @@
   "description": "Regression tooling for the tycoon text POC",
   "scripts": {
     "test:regression": "node ./scripts/run-regression-tests.js",
-    "test:seed-matrix": "node ./scripts/run-regression-tests.js --seed-matrix-only",
+    "test:rng": "node ./scripts/test-rng-determinism.js",
+    "verify:quick": "node ./scripts/verify-tycoon-quick.js",
     "verify:syntax": "node --check game.js"
   },
   "devDependencies": {

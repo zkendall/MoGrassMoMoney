@@ -46,7 +46,7 @@ function buildLabel(changed) {
   if (has(/(^|\/)game\.js$/)) categories.push('gameplay');
   if (has(/(^|\/)(index\.html|styles\.css)$/)) categories.push('ui');
   if (has(/(^|\/)(README\.md|POC-Tycoon\.md|progress\.md)$/)) categories.push('docs');
-  if (has(/(^|\/)scripts\/(verify-tycoon\.sh|verify-tycoon-quick\.sh)$/)) categories.push('verify');
+  if (has(/(^|\/)scripts\/(verify-tycoon\.sh|verify-tycoon-quick\.sh|verify-tycoon-quick\.js|verify-tycoon-headed-runner\.js|compute-verify-label\.js|summarize-verify-states\.js)$/)) categories.push('verify');
 
   const leaf = (file) => file.split('/').pop() || file;
   const slug = (value) =>
@@ -67,15 +67,7 @@ function buildLabel(changed) {
   return label.slice(0, 32).replace(/-+$/g, '');
 }
 
-function main() {
-  const rootDir = process.argv[2];
-  const stateOutPath = process.argv[3];
-  const historyPath = process.argv[4];
-  if (!rootDir || !stateOutPath || !historyPath) {
-    console.error('Usage: node compute-verify-label.js <rootDir> <stateOutPath> <historyPath>');
-    process.exit(1);
-  }
-
+function computeVerifyLabel(rootDir, stateOutPath, historyPath) {
   const files = walkFiles(rootDir).sort();
   const hashes = toHashMap(rootDir, files);
   const prev = fs.existsSync(historyPath)
@@ -97,7 +89,25 @@ function main() {
       2,
     ),
   );
+  return label;
+}
+
+function main() {
+  const rootDir = process.argv[2];
+  const stateOutPath = process.argv[3];
+  const historyPath = process.argv[4];
+  if (!rootDir || !stateOutPath || !historyPath) {
+    console.error('Usage: node compute-verify-label.js <rootDir> <stateOutPath> <historyPath>');
+    process.exit(1);
+  }
+  const label = computeVerifyLabel(rootDir, stateOutPath, historyPath);
   console.log(label);
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  computeVerifyLabel,
+};

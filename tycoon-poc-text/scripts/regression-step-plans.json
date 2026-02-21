@@ -32,9 +32,5 @@
     { "desc": "Finish day advance processing", "op": "complete_processing", "duration_ms": 700, "require_confirm": false },
     { "desc": "Return to day action mode", "op": "wait_mode", "mode": "day_action" },
     { "desc": "Ensure repeat customers increased", "op": "assert_repeat_customers", "min": 1 }
-  ],
-  "seed_summary": [
-    { "desc": "Confirm solicit", "op": "press", "key": "Enter" },
-    { "desc": "Finish solicit processing", "op": "complete_processing", "duration_ms": 1200, "require_confirm": true }
   ]
 }

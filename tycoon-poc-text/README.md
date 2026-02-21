@@ -63,26 +63,31 @@ open "http://127.0.0.1:4174/?seed=2"
 - `src/render/*`: console, status panel, and active customer rendering.
 - `src/keyboard.js`: per-mode input routing.
 
-## Snapshot Numbering Guideline
+## System Design
+
+- Architecture diagram: [`SYSTEM-DESIGN.md`](SYSTEM-DESIGN.md)
+
+## Snapshot Naming Guideline
 
 - Run verification with:
-  - `./scripts/verify-tycoon-quick.sh http://127.0.0.1:4174`
-- Each run creates indexed artifacts directly under `output/` with a concise change label:
-  - `NN-<change-label>-web-game/`
-  - matching probe file: `NN-<change-label>-probe.json`
+  - `npm --prefix tycoon-poc-text run verify:quick -- --url http://127.0.0.1:4174`
+  - headed mode: `npm --prefix tycoon-poc-text run verify:quick -- --url http://127.0.0.1:4174 --headed`
+- Each run creates timestamped artifacts directly under `output/` with a concise change label:
+  - `<UTC-timestamp>-<change-label>-web-game/`
+  - matching probe file: `<UTC-timestamp>-<change-label>-probe.json`
 - Label is computed from changes since the last successful verify run.
 - Label is intentionally short (`gameplay`, `ui`, `docs`, `verify`, or a compact file-based fallback).
 - If no tracked changes are detected, label becomes `no-change`.
-- Use matching index pairs when reviewing a run (`NN-...-web-game` + `NN-...-probe.json`).
+- Use matching timestamp pairs when reviewing a run (`<timestamp>-...-web-game` + `<timestamp>-...-probe.json`).
 
 ## Regression Tests
 
 - Install test dependencies:
   - `npm --prefix tycoon-poc-text install`
   - `npx --prefix tycoon-poc-text playwright install chromium`
-- Run the golden scenario suite (3 scenarios + seed matrix check):
+- Run RNG determinism unit test:
+  - `npm --prefix tycoon-poc-text run test:rng`
+- Run the golden scenario suite (3 scenarios):
   - `npm --prefix tycoon-poc-text run test:regression -- --url http://127.0.0.1:4174`
 - Update golden baselines after intentional behavior changes:
   - `node tycoon-poc-text/scripts/run-regression-tests.js --url http://127.0.0.1:4174 --update-golden`
-- Run deterministic seed matrix only:
-  - `./tycoon-poc-text/scripts/run-seed-matrix.sh http://127.0.0.1:4174`

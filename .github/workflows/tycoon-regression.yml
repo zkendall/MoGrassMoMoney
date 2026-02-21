@@ -38,6 +38,9 @@ jobs:
       - name: Run Syntax Check
         run: npm --prefix tycoon-poc-text run verify:syntax
 
+      - name: Run RNG Unit Test
+        run: npm --prefix tycoon-poc-text run test:rng
+
       - name: Run Regression Suite
         run: npm --prefix tycoon-poc-text run test:regression -- --url http://127.0.0.1:4174
 
