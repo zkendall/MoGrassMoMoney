@@ -29,14 +29,17 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  VQ["scripts/verify-tycoon-quick.sh"] --> VL["compute-verify-label.js"]
-  VQ --> VR["verify-tycoon-headed-runner.js\n(Playwright walkthrough)"]
-  VR --> APP["Tycoon app in browser\nindex.html to game.js to src/index.js"]
+  T["npx playwright test\ntests/regression.spec.js"] --> PW["Playwright Test runner"]
+  PW --> APP["Tycoon app in browser\nindex.html to game.js to src/index.js"]
+  PW --> GS["Golden JSON checks\n/tests/golden/*.json"]
+  PW --> RS["Regression summary\noutput/regression-tests/latest-summary.json"]
+
+  Q["npx playwright test\ntests/quick-verify.spec.js"] --> QP["Playwright Test runner"]
+  QP --> APP
   APP --> TXT["render_game_to_text snapshots"]
-  VR --> SS["Screenshots + state JSON\noutput/NN-{label}-web-game/"]
-  VQ --> VS["summarize-verify-states.js"]
-  VS --> PR["Probe summary\noutput/NN-{label}-probe.json"]
-  VQ --> HIST[".verify-history.json\nverify baseline for next label"]
+  QP --> SS["Screenshots + state JSON\noutput/<timestamp>-verify-web-game/"]
+  QP --> VS["summarize-verify-states.js"]
+  VS --> PR["Probe summary\noutput/<timestamp>-verify-probe.json"]
 ```
 
 ## Notes
@@ -44,4 +47,5 @@ flowchart LR
 - `src/index.js` is the composition root: initializes seeded state, attaches keyboard handlers, and drives rendering.
 - Mode safety is centralized in `src/stateMachine.js`, while transition timing is mediated by `src/processing.js`.
 - Economic outcomes and customer lifecycle behavior are concentrated in `src/dayActions.js` + `src/jobs.js`.
-- Verification is deterministic by default because verify scripts append `?start_state=test_all_actions` unless overridden.
+- Regression and quick-verify suites now both run under Playwright Test (`tests/regression.spec.js`, `tests/quick-verify.spec.js`).
+- Quick verify is deterministic by default because the quick spec appends `?start_state=test_all_actions` unless overridden.

@@ -29,12 +29,6 @@ jobs:
       - name: Install Playwright Browser
         run: npx --prefix tycoon-poc-text playwright install --with-deps chromium
 
-      - name: Start Tycoon Static Server
-        run: |
-          python3 -m http.server 4174 --directory tycoon-poc-text >/tmp/tycoon-http.log 2>&1 &
-          echo $! > /tmp/tycoon-http.pid
-          sleep 1
-
       - name: Run Syntax Check
         run: npm --prefix tycoon-poc-text run verify:syntax
 
@@ -42,7 +36,10 @@ jobs:
         run: npm --prefix tycoon-poc-text run test:rng
 
       - name: Run Regression Suite
-        run: npm --prefix tycoon-poc-text run test:regression -- --url http://127.0.0.1:4174
+        working-directory: tycoon-poc-text
+        env:
+          TYCOON_BASE_URL: http://127.0.0.1:4174
+        run: npx playwright test tests/regression.spec.js --config=playwright.config.js
 
       - name: Upload Regression Summary
         if: always()
@@ -51,9 +48,9 @@ jobs:
           name: tycoon-regression-summary
           path: tycoon-poc-text/output/regression-tests/latest-summary.json
 
-      - name: Stop Tycoon Static Server
+      - name: Upload Playwright Regression Report
         if: always()
-        run: |
-          if [ -f /tmp/tycoon-http.pid ]; then
-            kill "$(cat /tmp/tycoon-http.pid)" || true
-          fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: tycoon-playwright-report
+          path: tycoon-poc-text/output/regression-tests/playwright-report.json

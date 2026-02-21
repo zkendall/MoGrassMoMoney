@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "description": "Regression tooling for the tycoon text POC",
   "scripts": {
-    "test:regression": "node ./scripts/run-regression-tests.js",
+    "test:regression": "npx playwright test tests/regression.spec.js --config=playwright.config.js",
+    "test:regression:update": "UPDATE_GOLDEN=1 npx playwright test tests/regression.spec.js --config=playwright.config.js",
     "test:rng": "node ./scripts/test-rng-determinism.js",
-    "verify:quick": "node ./scripts/run-regression-tests.js --suite quick",
+    "verify:quick": "npx playwright test tests/quick-verify.spec.js --config=playwright.config.js",
     "verify:syntax": "node --check game.js"
   },
   "devDependencies": {

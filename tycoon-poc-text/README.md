@@ -69,29 +69,32 @@ open "http://127.0.0.1:4174/?seed=2"
 
 ## Snapshot Naming Guideline
 
-- Verify and regression suites share one runner: `scripts/run-regression-tests.js` (different `--suite` modes).
+- Quick verify runs through Playwright Test via `npx playwright test tests/quick-verify.spec.js`.
 - Run verification with:
-  - `npm --prefix tycoon-poc-text run verify:quick -- --url http://127.0.0.1:4174`
-  - headed mode: `npm --prefix tycoon-poc-text run verify:quick -- --url http://127.0.0.1:4174 --headed`
-- Each run creates timestamped artifacts directly under `output/` with a concise change label:
-  - `<UTC-timestamp>-<change-label>-web-game/`
-  - matching probe file: `<UTC-timestamp>-<change-label>-probe.json`
-- Label is computed from changes since the last successful verify run.
-- Label is intentionally short (`gameplay`, `ui`, `docs`, `verify`, or a compact file-based fallback).
-- If no tracked changes are detected, label becomes `no-change`.
-- Use matching timestamp pairs when reviewing a run (`<timestamp>-...-web-game` + `<timestamp>-...-probe.json`).
+  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/quick-verify.spec.js --config=playwright.config.js`
+  - headed mode: `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/quick-verify.spec.js --config=playwright.config.js --headed`
+- Each run creates timestamped artifacts directly under `output/`:
+  - `<UTC-timestamp>-verify-web-game/`
+  - matching probe file: `<UTC-timestamp>-verify-probe.json`
 
 ## Regression Tests
 
 - Install test dependencies:
   - `npm --prefix tycoon-poc-text install`
   - `npx --prefix tycoon-poc-text playwright install chromium`
+- Playwright Test config: `tycoon-poc-text/playwright.config.js`.
+- Playwright regression spec: `tycoon-poc-text/tests/regression.spec.js`.
+- Playwright quick-verify spec: `tycoon-poc-text/tests/quick-verify.spec.js`.
 - Run RNG determinism unit test:
   - `npm --prefix tycoon-poc-text run test:rng`
 - Run the golden scenario suite (3 scenarios):
-  - `npm --prefix tycoon-poc-text run test:regression -- --url http://127.0.0.1:4174`
-- Runner supports suites explicitly:
-  - regression: `node tycoon-poc-text/scripts/run-regression-tests.js --suite regression --url http://127.0.0.1:4174`
-  - quick verify: `node tycoon-poc-text/scripts/run-regression-tests.js --suite quick --url http://127.0.0.1:4174`
+  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/regression.spec.js --config=playwright.config.js`
+- Run quick verify walkthrough:
+  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/quick-verify.spec.js --config=playwright.config.js`
+- Run headed regression:
+  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/regression.spec.js --config=playwright.config.js --headed`
 - Update golden baselines after intentional behavior changes:
-  - `node tycoon-poc-text/scripts/run-regression-tests.js --url http://127.0.0.1:4174 --update-golden`
+  - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 UPDATE_GOLDEN=1 npx playwright test tests/regression.spec.js --config=playwright.config.js`
+- Compatibility note:
+  - `test:regression`, `test:regression:update`, and `verify:quick` npm scripts call Playwright Test directly.
+  - Legacy `scripts/run-regression-tests.js` remains as a compatibility delegator for `--suite regression|quick|all` and optional `--url`.
