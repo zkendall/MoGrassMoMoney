@@ -14,6 +14,20 @@ async function advanceUntil(driver, predicate, { maxSteps = 260, stepMs = 60 } =
 
 function buildSafeHorizontalPath(state, yOffset = 44) {
   const lawn = state.map.lawn;
+  if (lawn.kind === 'circle') {
+    const inset = 46;
+    const usableRadius = Math.max(14, lawn.r - inset);
+    const y = lawn.cy - usableRadius * 0.3 + yOffset * 0.2;
+    const dy = y - lawn.cy;
+    const span = Math.sqrt(Math.max(0, usableRadius * usableRadius - dy * dy));
+    const left = lawn.cx - span;
+    const right = lawn.cx + span;
+    return [
+      { x: left, y },
+      { x: right, y },
+    ];
+  }
+
   const left = lawn.x + 46;
   const right = lawn.x + lawn.w - 46;
   const y = lawn.y + yOffset;
@@ -25,6 +39,30 @@ function buildSafeHorizontalPath(state, yOffset = 44) {
 
 function buildLongZigzagPath(state, laneCount = 14) {
   const lawn = state.map.lawn;
+  if (lawn.kind === 'circle') {
+    const inset = 42;
+    const usableRadius = Math.max(20, lawn.r - inset);
+    const top = lawn.cy - usableRadius;
+    const bottom = lawn.cy + usableRadius;
+    const height = Math.max(20, bottom - top);
+    const step = Math.max(16, height / Math.max(2, laneCount));
+    const points = [];
+
+    for (let i = 0; i <= laneCount; i += 1) {
+      const y = Math.min(bottom, top + i * step);
+      const dy = y - lawn.cy;
+      const span = Math.sqrt(Math.max(0, usableRadius * usableRadius - dy * dy));
+      const left = lawn.cx - span;
+      const right = lawn.cx + span;
+      if (i % 2 === 0) {
+        points.push({ x: left, y }, { x: right, y });
+      } else {
+        points.push({ x: right, y }, { x: left, y });
+      }
+    }
+    return points;
+  }
+
   const left = lawn.x + 42;
   const right = lawn.x + lawn.w - 42;
   const top = lawn.y + 54;
@@ -195,6 +233,9 @@ test('manual mower uses no fuel', async ({ page }) => {
   expect(state.mower.type_id).toBe('manual');
   expect(state.mower.uses_fuel).toBe(false);
   expect(state.mower.fuel_capacity).toBe(0);
+  expect(state.map.lawn.kind).toBe('circle');
+  expect(Array.isArray(state.map.yard_features)).toBe(true);
+  expect(state.map.yard_features.length).toBeGreaterThan(0);
 
   await driver.drawPath(buildSafeHorizontalPath(state, 52));
   await driver.clickReviewButton('Accept');

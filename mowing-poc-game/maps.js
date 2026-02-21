@@ -5,9 +5,24 @@
         id: 'small',
         label: 'Small Lawn',
         scene: {
-          lawn: { x: 210, y: 165, w: 500, h: 350 },
+          lawn: {
+            kind: 'circle',
+            cx: 460,
+            cy: 355,
+            r: 170,
+            x: 290,
+            y: 185,
+            w: 340,
+            h: 340,
+          },
           house: { x: 165, y: 35, w: 590, h: 105 },
           driveway: { x: 660, y: 140, w: 80, h: 395 },
+          yardFeatures: [
+            { id: 'pool-small', style: 'pool', kind: 'ellipse', cx: 715, cy: 365, rx: 78, ry: 50, nonMowable: true },
+            { id: 'walk-main-small', style: 'walk-path', kind: 'rect', x: 210, y: 532, w: 530, h: 22, nonMowable: true },
+            { id: 'walk-side-small', style: 'walk-path', kind: 'rect', x: 392, y: 520, w: 22, h: 85, nonMowable: true },
+          ],
+          spawn: { x: 352, y: 286 },
           targetCoverage: 95,
         },
         obstacles: [

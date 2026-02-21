@@ -61,7 +61,7 @@ Player selects mower + lawn in a setup menu, then plans a mowing route by drawin
 
 ## Lawn Maps
 Provide three distinct maps with unique geometry and obstacle arrangements:
-- `small`: tighter mow area and obstacle spacing.
+- `small`: circular lawn island inside a larger yard, with pool + cement walk paths marked as non-mowable zones.
 - `medium`: baseline suburban lot.
 - `large`: wider estate-style layout with more obstacle routing variance.
 
@@ -69,7 +69,10 @@ Each map contains:
 - Lawn bounds (mowable region)
 - House block (non-mowable)
 - Driveway block (non-mowable)
+- Optional non-mowable yard features (for example pool/walk paths)
 - 4-6 static obstacles
+
+Non-mowable yard features are not crash obstacles; only static obstacles apply crash penalties.
 
 ## Technical Prototype Notes
 - Coverage tracked by mow grid cells.

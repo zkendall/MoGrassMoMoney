@@ -33,6 +33,7 @@ Open: `http://localhost:4173`
   - `large`
 
 Each lawn is a distinct map with different lawn/house/driveway geometry and obstacle layout.
+`small` is a circular island lawn inside a larger yard, with a pool and cement walk paths as non-mowable surfaces.
 
 ## Controls
 
@@ -55,6 +56,7 @@ Reach 95% mow coverage at the end of an accepted route animation.
 ## Current Behavior Notes
 
 - During animation, the route is shown as a smoothed black dashed centerline (brush hidden).
-- Crash penalties trigger when the route centerline overlaps an obstacle; each entry applies `-$1` and a flip animation.
+- Crash penalties trigger only when the route centerline overlaps static obstacles; each entry applies `-$1` and a flip animation.
+- Small-map pool and walk-path yard zones are non-mowable but do not apply crash penalties.
 - Fuel depletion pauses animation in place; refilling resumes the same route progress.
 - Session-only setup memory: pressing `R` returns to menu with previous selection preselected in the current tab.

@@ -80,14 +80,17 @@
 
   let activeScene = { ...LAWN_MAPS[DEFAULT_LAWN_MAP_ID].scene };
   let activeObstacles = LAWN_MAPS[DEFAULT_LAWN_MAP_ID].obstacles.map((obstacle) => ({ ...obstacle }));
+  let activeYardFeatures = Array.isArray(activeScene.yardFeatures)
+    ? activeScene.yardFeatures.map((feature) => ({ ...feature }))
+    : [];
   let lastSelections = {
     mowerId: null,
     lawnId: null,
   };
 
   const mower = {
-    x: activeScene.lawn.x + 72,
-    y: activeScene.lawn.y + 58,
+    x: activeScene.spawn?.x ?? activeScene.lawn.x + 72,
+    y: activeScene.spawn?.y ?? activeScene.lawn.y + 58,
     heading: 0,
     radius: 18,
     deckRadius: MOWER_TYPES[DEFAULT_MOWER_TYPE_ID].deckRadius,
@@ -269,13 +272,82 @@
     return dx * dx + dy * dy <= cr * cr;
   }
 
+  function pointInShape(x, y, shape) {
+    if (!shape) return false;
+    if (shape.kind === 'circle') {
+      const dx = x - shape.x;
+      const dy = y - shape.y;
+      return dx * dx + dy * dy <= shape.r * shape.r;
+    }
+    if (shape.kind === 'ellipse') {
+      const dx = (x - shape.cx) / shape.rx;
+      const dy = (y - shape.cy) / shape.ry;
+      return dx * dx + dy * dy <= 1;
+    }
+    return (
+      x >= shape.x &&
+      x <= shape.x + shape.w &&
+      y >= shape.y &&
+      y <= shape.y + shape.h
+    );
+  }
+
+  function isPointInsideLawn(point, margin = 0) {
+    const lawn = activeScene.lawn;
+    if (lawn.kind === 'circle') {
+      const radius = Math.max(0, lawn.r - margin);
+      const dx = point.x - lawn.cx;
+      const dy = point.y - lawn.cy;
+      return dx * dx + dy * dy <= radius * radius;
+    }
+    return (
+      point.x >= lawn.x + margin &&
+      point.x <= lawn.x + lawn.w - margin &&
+      point.y >= lawn.y + margin &&
+      point.y <= lawn.y + lawn.h - margin
+    );
+  }
+
+  function clampPointToLawn(point, margin = 0) {
+    const lawn = activeScene.lawn;
+    if (lawn.kind === 'circle') {
+      const radius = Math.max(0, lawn.r - margin);
+      const dx = point.x - lawn.cx;
+      const dy = point.y - lawn.cy;
+      const distance = Math.hypot(dx, dy);
+      if (distance <= radius || distance < 0.0001) {
+        return { x: point.x, y: point.y };
+      }
+      const scale = radius / distance;
+      return {
+        x: lawn.cx + dx * scale,
+        y: lawn.cy + dy * scale,
+      };
+    }
+    return {
+      x: clamp(point.x, lawn.x + margin, lawn.x + lawn.w - margin),
+      y: clamp(point.y, lawn.y + margin, lawn.y + lawn.h - margin),
+    };
+  }
+
+  function isPointInNonMowZone(x, y) {
+    for (const feature of activeYardFeatures) {
+      if (feature.nonMowable !== true) {
+        continue;
+      }
+      if (pointInShape(x, y, feature)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function isPointMowable(x, y) {
-    if (
-      x < activeScene.lawn.x ||
-      x > activeScene.lawn.x + activeScene.lawn.w ||
-      y < activeScene.lawn.y ||
-      y > activeScene.lawn.y + activeScene.lawn.h
-    ) {
+    if (!isPointInsideLawn({ x, y })) {
+      return false;
+    }
+
+    if (isPointInNonMowZone(x, y)) {
       return false;
     }
 
@@ -377,10 +449,7 @@
   }
 
   function clampPointToPlaybackBounds(point) {
-    return {
-      x: clamp(point.x, activeScene.lawn.x + mower.radius, activeScene.lawn.x + activeScene.lawn.w - mower.radius),
-      y: clamp(point.y, activeScene.lawn.y + mower.radius, activeScene.lawn.y + activeScene.lawn.h - mower.radius),
-    };
+    return clampPointToLawn(point, mower.radius);
   }
 
   function dedupeClosePoints(points, minSpacing = 1) {
@@ -899,8 +968,40 @@
     }
   }
 
+  function drawYardFeatures() {
+    for (const feature of activeYardFeatures) {
+      const style = feature.style || feature.id || '';
+      if (style.includes('pool')) {
+        ctx.save();
+        ctx.fillStyle = '#4f89ad';
+        ctx.beginPath();
+        if (feature.kind === 'ellipse') {
+          ctx.ellipse(feature.cx, feature.cy, feature.rx, feature.ry, 0, 0, Math.PI * 2);
+        } else {
+          ctx.arc(feature.x, feature.y, feature.r, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        ctx.strokeStyle = '#d5eaf6';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.restore();
+        continue;
+      }
+
+      if (style.includes('walk-path')) {
+        ctx.fillStyle = '#c8c6bf';
+        if (feature.kind === 'rect') {
+          ctx.fillRect(feature.x, feature.y, feature.w, feature.h);
+          ctx.strokeStyle = '#e6e4dd';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(feature.x + 0.5, feature.y + 0.5, feature.w - 1, feature.h - 1);
+        }
+      }
+    }
+  }
+
   function drawScene() {
-    ctx.fillStyle = '#80a884';
+    ctx.fillStyle = '#9aa18d';
     ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
     ctx.fillStyle = '#d3c4aa';
@@ -912,10 +1013,17 @@
     ctx.fillRect(activeScene.driveway.x, activeScene.driveway.y, activeScene.driveway.w, activeScene.driveway.h);
 
     drawMowGrid();
+    drawYardFeatures();
 
     ctx.strokeStyle = '#e8dfcf';
     ctx.lineWidth = 4;
-    ctx.strokeRect(activeScene.lawn.x, activeScene.lawn.y, activeScene.lawn.w, activeScene.lawn.h);
+    if (activeScene.lawn.kind === 'circle') {
+      ctx.beginPath();
+      ctx.arc(activeScene.lawn.cx, activeScene.lawn.cy, activeScene.lawn.r, 0, Math.PI * 2);
+      ctx.stroke();
+    } else {
+      ctx.strokeRect(activeScene.lawn.x, activeScene.lawn.y, activeScene.lawn.w, activeScene.lawn.h);
+    }
 
     for (const obstacle of activeObstacles) {
       const style = obstacle.style || obstacle.id;
@@ -1180,6 +1288,17 @@
     return { mowerOptions, lawnOptions };
   }
 
+  function getSceneSpawnPoint() {
+    if (activeScene.spawn && Number.isFinite(activeScene.spawn.x) && Number.isFinite(activeScene.spawn.y)) {
+      return clampPointToLawn({ x: activeScene.spawn.x, y: activeScene.spawn.y }, mower.radius);
+    }
+    const fallback = {
+      x: activeScene.lawn.x + 72,
+      y: activeScene.lawn.y + 58,
+    };
+    return clampPointToLawn(fallback, mower.radius);
+  }
+
   function applySelectedSetup() {
     const mowerType = MOWER_TYPES[state.selectedMowerId] || MOWER_TYPES[DEFAULT_MOWER_TYPE_ID];
     const lawnMap = LAWN_MAPS[state.selectedLawnId] || LAWN_MAPS[DEFAULT_LAWN_MAP_ID];
@@ -1187,6 +1306,9 @@
     state.activeMapId = lawnMap.id;
     activeScene = { ...lawnMap.scene };
     activeObstacles = lawnMap.obstacles.map((obstacle) => ({ ...obstacle }));
+    activeYardFeatures = Array.isArray(lawnMap.scene.yardFeatures)
+      ? lawnMap.scene.yardFeatures.map((feature) => ({ ...feature }))
+      : [];
 
     mower.typeId = mowerType.id;
     mower.typeLabel = mowerType.label;
@@ -1204,8 +1326,9 @@
     }
     pathState.brushRadius = mower.deckRadius;
 
-    mower.x = activeScene.lawn.x + 72;
-    mower.y = activeScene.lawn.y + 58;
+    const spawn = getSceneSpawnPoint();
+    mower.x = spawn.x;
+    mower.y = spawn.y;
     mower.heading = 0;
 
     state.elapsed = 0;
@@ -1671,6 +1794,41 @@
         ? { id: o.id, style: o.style, kind: o.kind, x: o.x, y: o.y, r: o.r }
         : { id: o.id, style: o.style, kind: o.kind, x: o.x, y: o.y, w: o.w, h: o.h }
     ));
+    const visibleYardFeatures = activeYardFeatures.map((feature) => {
+      if (feature.kind === 'circle') {
+        return {
+          id: feature.id,
+          style: feature.style,
+          kind: feature.kind,
+          x: feature.x,
+          y: feature.y,
+          r: feature.r,
+          non_mowable: Boolean(feature.nonMowable),
+        };
+      }
+      if (feature.kind === 'ellipse') {
+        return {
+          id: feature.id,
+          style: feature.style,
+          kind: feature.kind,
+          cx: feature.cx,
+          cy: feature.cy,
+          rx: feature.rx,
+          ry: feature.ry,
+          non_mowable: Boolean(feature.nonMowable),
+        };
+      }
+      return {
+        id: feature.id,
+        style: feature.style,
+        kind: feature.kind,
+        x: feature.x,
+        y: feature.y,
+        w: feature.w,
+        h: feature.h,
+        non_mowable: Boolean(feature.nonMowable),
+      };
+    });
 
     const reviewButtons = getReviewButtons().map((button) => ({
       id: button.id,
@@ -1779,9 +1937,13 @@
       },
       map: {
         id: state.activeMapId,
-        lawn: activeScene.lawn,
+        lawn: {
+          ...activeScene.lawn,
+          kind: activeScene.lawn.kind || 'rect',
+        },
         house_block: activeScene.house,
         driveway_block: activeScene.driveway,
+        yard_features: visibleYardFeatures,
         obstacles: visibleObstacles,
       },
       input: {
