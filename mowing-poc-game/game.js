@@ -684,7 +684,7 @@
     drawSteeringHud();
 
     if (state.mode === 'start') {
-      overlayMessage('Mow Grass Mo\' Money', 'Hold left mouse to mow. Cursor steers. Right mouse reverses.');
+      overlayMessage('MoGrassMoMoney', 'Hold left mouse to mow. Cursor steers. Right mouse reverses.');
       overlayMessage('Press click or space to start', 'Clear 95% of the lawn while avoiding obstacles.', 36);
     } else if (state.mode === 'won') {
       overlayMessage('Job complete!', `Final coverage ${state.coverage.toFixed(1)}%. Press R to mow again.`);

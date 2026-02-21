@@ -1,4 +1,4 @@
-# Mow Grass Mo' Money — Prompt Pack (AI concept + mood)
+# MoGrassMoMoney — Prompt Pack (AI concept + mood)
 
 These are model-agnostic prompts designed to work with Midjourney, SDXL, DALL·E, etc. Replace `[brackets]` with your details.
 

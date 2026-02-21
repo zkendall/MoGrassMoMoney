@@ -1,4 +1,4 @@
-# Mow Grass Mo' Money — Mood Boards (text)
+# MoGrassMoMoney — Mood Boards (text)
 
 Use these as “search terms + composition notes” for gathering image references and for AI generation prompts.
 

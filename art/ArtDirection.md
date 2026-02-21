@@ -1,4 +1,4 @@
-# Mow Grass Mo' Money — Art Direction (v0)
+# MoGrassMoMoney — Art Direction (v0)
 
 ## High-level vibe
 Cozy, optimistic, “small business to empire” ambition. Everything should feel friendly and readable, even when the numbers get big, with somewhat muted tones for an indie-game feel.

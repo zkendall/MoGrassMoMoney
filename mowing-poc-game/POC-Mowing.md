@@ -1,4 +1,4 @@
-# Mow Grass Mo' Money — Proof of Concept (Mowing Minigame Only)
+# MoGrassMoMoney — Proof of Concept (Mowing Minigame Only)
 
 ## Goal
 Build a playable proof of concept focused on one top-down mowing minigame.

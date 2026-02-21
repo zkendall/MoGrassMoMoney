@@ -1,4 +1,4 @@
-# Mow Grass Mo' Money — Proof of Concept (Tycoon Meta Game, Text-First)
+# MoGrassMoMoney — Proof of Concept (Tycoon Meta Game, Text-First)
 
 ## Goal
 Build a playable proof of concept focused on the business-management layer that surrounds mowing, using text-based interaction first.

@@ -1,4 +1,4 @@
-# Mow Grass Mo' Money — Concept Art Shot List
+# MoGrassMoMoney — Concept Art Shot List
 
 ## Marketing / key art candidates
 1) **Golden-hour stripe reveal**: mower mid-turn, satisfying clean lines, warm sun, cozy suburb backdrop.
