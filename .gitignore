@@ -10,3 +10,4 @@ node_modules/
 !**/pnpm-lock.yaml
 tycoon-poc-text/output/
 .DS_Store
+mowing-poc-game/output/
