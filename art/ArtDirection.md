@@ -11,6 +11,8 @@ Top-down 2D with painterly stylization:
 - Selective outline/edge accents for gameplay readability
 - Mostly muted, earthy colors with restrained saturation (save brighter accents for rewards/state changes)
 
+Update: Probably **Isometric** is much better if we can achieve it.
+
 If you want a different look, pick one and I’ll retune the boards/prompts:
 - **More cozy-cartoon:** flatter shading + stronger color blocking
 - **More grounded-illustration:** lower saturation + more natural material cues

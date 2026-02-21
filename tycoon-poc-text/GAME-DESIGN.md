@@ -82,6 +82,7 @@ Use upgrades as the main progression language for the tycoon layer.
 - Action: `Solicit`
 - Purpose: increase response volume and lead generation consistency.
 - Candidate tiers:
+  - hire highschooler flier help
   - newspaper ads
   - billboard space
   - TV ads

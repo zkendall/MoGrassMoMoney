@@ -1,10 +1,5 @@
 # MoGrassMoMoney — Concept Art Shot List
 
-## Marketing / key art candidates
-1) **Golden-hour stripe reveal**: mower mid-turn, satisfying clean lines, warm sun, cozy suburb backdrop.
-2) **“From push mower to empire”**: lineup progression across the image (manual push → riding mower → trailer + crew).
-3) **Garage HQ**: your small business base with upgrades visible (tools, shelves, trophy lawn awards, region map).
-
 ## Gameplay clarity concepts
 4) **Obstacle language sheet**: sprinklers, toys, flower beds, rocks, hoses, water feature edges (with “avoid/slow/bonus” notes).
 5) **Grass material sheet**: mowed/unmowed variations (stripe direction, wet vs dry, shade vs sun).
