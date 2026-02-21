@@ -52,12 +52,14 @@ test('drawing -> review -> retry -> drawing -> accept -> animating -> complete',
 
   const startProgress = state.playback.progress_0_to_1;
   const startCoverage = state.coverage_percent;
+  const startFuel = state.mower.fuel;
 
   await driver.advance(1000);
   state = await driver.readState();
   expect(state.mode).toBe('animating');
   expect(state.playback.progress_0_to_1).toBeGreaterThan(startProgress);
   expect(state.coverage_percent).toBeGreaterThan(startCoverage);
+  expect(state.mower.fuel).toBeLessThan(startFuel);
 
   state = await advanceUntil(driver, (snapshot) => snapshot.mode !== 'animating', {
     maxSteps: 300,
@@ -102,6 +104,95 @@ test('holding Space fast-forwards mower playback speed', async ({ page }) => {
   expect(state.input.fast_forward).toBe(false);
   expect(state.playback.effective_speed_px_per_sec).toBe(state.playback.speed_px_per_sec);
   expect(fastDelta).toBeGreaterThan(normalDelta * 1.8);
+
+  driver.expectNoConsoleErrors();
+});
+
+test('small mower empties tank and requires paid refill to continue', async ({ page }) => {
+  const driver = createGameDriver(page);
+
+  await page.goto('/?mower_type=small', { waitUntil: 'domcontentloaded' });
+  await driver.waitForRenderApi();
+
+  const depletionPath = [
+    { x: 180, y: 180 },
+    { x: 760, y: 180 },
+    { x: 760, y: 200 },
+    { x: 180, y: 200 },
+    { x: 180, y: 220 },
+    { x: 760, y: 220 },
+    { x: 760, y: 200 },
+    { x: 180, y: 200 },
+    { x: 180, y: 180 },
+    { x: 760, y: 180 },
+    { x: 760, y: 200 },
+    { x: 180, y: 200 },
+    { x: 180, y: 220 },
+    { x: 760, y: 220 },
+  ];
+
+  await driver.drawPath(depletionPath);
+  await driver.clickReviewButton('Accept');
+
+  let state = await advanceUntil(driver, (snapshot) => (
+    snapshot.mode === 'animating'
+      && snapshot.playback.waiting_for_fuel
+      && snapshot.mower.fuel <= 0.01
+  ), { maxSteps: 420, stepMs: 60 });
+
+  expect(state.mode).toBe('animating');
+  expect(state.playback.waiting_for_fuel).toBe(true);
+  expect(state.mower.uses_fuel).toBe(true);
+  expect(state.mower.fuel_capacity).toBeCloseTo(0.5, 3);
+  expect(state.mower.fuel).toBeLessThanOrEqual(0.01);
+  const pausedProgress = state.playback.progress_0_to_1;
+
+  const cashBeforeRefill = state.economy.cash;
+  const refillCost = state.economy.refill_cost;
+  expect(refillCost).toBeGreaterThan(0);
+
+  await page.keyboard.press('e');
+  state = await driver.readState();
+
+  expect(state.mode).toBe('animating');
+  expect(state.playback.waiting_for_fuel).toBe(false);
+  expect(state.mower.fuel).toBeCloseTo(state.mower.fuel_capacity, 2);
+  expect(state.economy.cash).toBeCloseTo(cashBeforeRefill - refillCost, 2);
+  expect(state.economy.refill_cost).toBeCloseTo(0, 2);
+
+  await driver.advance(120);
+  state = await driver.readState();
+  expect(state.playback.progress_0_to_1).toBeGreaterThan(pausedProgress);
+
+  driver.expectNoConsoleErrors();
+});
+
+test('push mower uses no fuel', async ({ page }) => {
+  const driver = createGameDriver(page);
+
+  await page.goto('/?mower_type=push', { waitUntil: 'domcontentloaded' });
+  await driver.waitForRenderApi();
+
+  let state = await driver.readState();
+  expect(state.mower.type_id).toBe('push');
+  expect(state.mower.uses_fuel).toBe(false);
+  expect(state.mower.fuel_capacity).toBe(0);
+
+  await driver.drawPath([
+    { x: 190, y: 200 },
+    { x: 760, y: 200 },
+  ]);
+  await driver.clickReviewButton('Accept');
+  await driver.advance(1000);
+
+  state = await driver.readState();
+  expect(state.mode).toBe('animating');
+  expect(state.mower.fuel).toBe(0);
+  expect(state.economy.refill_cost).toBe(0);
+
+  await page.keyboard.press('e');
+  state = await driver.readState();
+  expect(state.mower.fuel).toBe(0);
 
   driver.expectNoConsoleErrors();
 });

@@ -31,6 +31,7 @@ Player plans a mowing route by drawing it, reviews that route, then watches the 
 - Release to enter review mode.
 - In review mode, click `Accept` to execute the route or `Retry` to redraw.
 - During animation, hold `Space` to fast-forward playback.
+- Press `E` to refill fuel for fuel-powered mower types.
 - `F` toggles fullscreen, `R` resets progress, and `M` toggles music.
 
 ### Mowing Rules
@@ -41,6 +42,12 @@ Player plans a mowing route by drawing it, reviews that route, then watches the 
 - Coverage persists across route attempts until reset.
 - The level completes when an animation run finishes and coverage is at least the target threshold (95%).
 - During playback, only the centerline is shown (black dashed line); brush swath visualization is hidden.
+- Fuel behavior is mower-type dependent:
+  - Push mower uses no fuel.
+  - Small mower has a `0.5 gal` tank.
+- Small mower fuel drains during route animation movement; when empty, route execution pauses until refilled, then resumes from that same route position.
+- Refilling costs `$3.00` per gallon added.
+- Mower type can be selected via query (`?mower_type=push` or `?mower_type=small`) for prototype tuning/testing.
 
 ### Failure/Constraint Rules (Minimal)
 - Crash checks use the route centerline position (line-overlap behavior), not mower body width.

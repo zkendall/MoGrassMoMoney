@@ -50,6 +50,26 @@
     { id: 'gnome', kind: 'rect', x: 592, y: 458, w: 26, h: 30 },
   ];
 
+  const FUEL_PRICE_PER_GALLON = 3;
+  const MOWER_TYPES = {
+    push: {
+      label: 'Push Mower',
+      fuelCapacity: 0,
+      fuelBurnPerPixel: 0,
+    },
+    small: {
+      label: 'Small Mower',
+      fuelCapacity: 0.5,
+      fuelBurnPerPixel: 0.0002,
+    },
+  };
+  const DEFAULT_MOWER_TYPE_ID = 'small';
+  const mowerTypeFromQuery = new URLSearchParams(window.location.search).get('mower_type');
+  const activeMowerTypeId = MOWER_TYPES[mowerTypeFromQuery]
+    ? mowerTypeFromQuery
+    : DEFAULT_MOWER_TYPE_ID;
+  const defaultMowerType = MOWER_TYPES[activeMowerTypeId];
+
   const mower = {
     x: scene.lawn.x + 72,
     y: scene.lawn.y + 58,
@@ -57,6 +77,11 @@
     radius: 18,
     deckRadius: 26,
     playbackSpeed: 120,
+    typeId: activeMowerTypeId,
+    typeLabel: defaultMowerType.label,
+    fuelCapacity: defaultMowerType.fuelCapacity,
+    fuel: defaultMowerType.fuelCapacity,
+    fuelBurnPerPixel: defaultMowerType.fuelBurnPerPixel,
   };
 
   const input = {
@@ -98,6 +123,7 @@
     minPointSpacing: 5,
     minPathLength: 20,
     fastForwardMultiplier: 3,
+    pausedForFuel: false,
   };
 
   const animationState = {
@@ -496,6 +522,7 @@
     pathState.playbackLengths = [];
     pathState.totalLength = 0;
     pathState.progress = 0;
+    pathState.pausedForFuel = false;
     overlappingObstacleIds = [];
     animationState.flipActive = false;
     animationState.flipTimer = 0;
@@ -504,6 +531,43 @@
   function markTransientMessage(text, duration = 1.2) {
     state.transientMessage = text;
     state.transientTimer = duration;
+  }
+
+  function mowerUsesFuel() {
+    return mower.fuelCapacity > 0 && mower.fuelBurnPerPixel > 0;
+  }
+
+  function getRefillGallonsNeeded() {
+    if (!mowerUsesFuel()) return 0;
+    return Math.max(0, mower.fuelCapacity - mower.fuel);
+  }
+
+  function getRefillCost() {
+    return getRefillGallonsNeeded() * FUEL_PRICE_PER_GALLON;
+  }
+
+  function tryRefillMower() {
+    if (!mowerUsesFuel()) {
+      markTransientMessage(`${mower.typeLabel} uses no fuel.`);
+      return false;
+    }
+
+    const gallonsNeeded = getRefillGallonsNeeded();
+    if (gallonsNeeded <= 0.0001) {
+      markTransientMessage('Tank already full.');
+      return false;
+    }
+
+    const refillCost = getRefillCost();
+    mower.fuel = mower.fuelCapacity;
+    state.cash -= refillCost;
+    pathState.pausedForFuel = false;
+    if (state.mode === 'animating' && pathState.totalLength > 0 && pathState.progress < pathState.totalLength) {
+      markTransientMessage(`Refilled ${gallonsNeeded.toFixed(2)} gal for $${refillCost.toFixed(2)}. Continuing route.`);
+    } else {
+      markTransientMessage(`Refilled ${gallonsNeeded.toFixed(2)} gal for $${refillCost.toFixed(2)}.`);
+    }
+    return true;
   }
 
   function getReviewButtons() {
@@ -612,6 +676,12 @@
   }
 
   function acceptPath() {
+    if (mowerUsesFuel() && mower.fuel <= 0.0001) {
+      markTransientMessage(`Tank empty. Press E to refill ($${FUEL_PRICE_PER_GALLON.toFixed(2)}/gal).`);
+      state.mode = 'review';
+      return;
+    }
+
     const playbackPoints = createPlaybackPath(pathState.draftPoints);
     if (playbackPoints.length < 2) {
       clearPlaybackPath();
@@ -624,6 +694,7 @@
     pathState.playbackLengths = buildCumulativeLengths(playbackPoints);
     pathState.totalLength = pathState.playbackLengths[pathState.playbackLengths.length - 1] || 0;
     pathState.progress = 0;
+    pathState.pausedForFuel = false;
 
     const startSample = samplePointOnPath(pathState.playbackPoints, pathState.playbackLengths, 0);
     if (startSample) {
@@ -684,6 +755,15 @@
       return;
     }
 
+    if (mowerUsesFuel() && mower.fuel <= 0.0001) {
+      if (!pathState.pausedForFuel) {
+        pathState.pausedForFuel = true;
+        markTransientMessage(`Out of fuel. Press E to refill ($${FUEL_PRICE_PER_GALLON.toFixed(2)}/gal).`);
+      }
+      return;
+    }
+    pathState.pausedForFuel = false;
+
     if (animationState.flipActive) {
       animationState.flipTimer += dt;
       if (animationState.flipTimer >= animationState.flipDuration) {
@@ -697,10 +777,21 @@
       ? mower.playbackSpeed * pathState.fastForwardMultiplier
       : mower.playbackSpeed;
 
+    const requestedTravel = speed * dt;
+    const maxTravelFromFuel = mowerUsesFuel()
+      ? (mower.fuel / mower.fuelBurnPerPixel)
+      : requestedTravel;
+    const actualTravel = Math.max(0, Math.min(requestedTravel, maxTravelFromFuel));
+
+    const priorProgress = pathState.progress;
     pathState.progress = Math.min(
       pathState.totalLength,
-      pathState.progress + speed * dt
+      pathState.progress + actualTravel
     );
+    const traveledThisStep = Math.max(0, pathState.progress - priorProgress);
+    if (mowerUsesFuel()) {
+      mower.fuel = Math.max(0, mower.fuel - traveledThisStep * mower.fuelBurnPerPixel);
+    }
 
     const sample = samplePointOnPath(
       pathState.playbackPoints,
@@ -735,6 +826,12 @@
       } else {
         state.mode = 'drawing';
       }
+      return;
+    }
+
+    if (mowerUsesFuel() && actualTravel < requestedTravel && mower.fuel <= 0.0001) {
+      pathState.pausedForFuel = true;
+      markTransientMessage(`Out of fuel. Press E to refill ($${FUEL_PRICE_PER_GALLON.toFixed(2)}/gal).`);
     }
   }
 
@@ -1003,25 +1100,38 @@
 
   function drawUi() {
     ctx.fillStyle = 'rgb(20 30 24 / 72%)';
-    ctx.fillRect(16, 12, 350, 102);
+    ctx.fillRect(16, 12, 410, 126);
 
     ctx.fillStyle = '#f4f0e0';
     ctx.font = '16px "Trebuchet MS", sans-serif';
     ctx.fillText(`Coverage: ${state.coverage.toFixed(1)}%`, 28, 34);
     ctx.fillText(`Target: ${scene.targetCoverage}%`, 28, 56);
-    ctx.fillText(`Cash: $${state.cash}`, 28, 78);
-    ctx.fillText(`Crashes: ${state.totalCrashes}`, 150, 78);
-    ctx.fillText(`Mode: ${state.mode}`, 150, 56);
-    ctx.fillText(`Music: ${state.musicMuted ? 'Off' : 'On'} (M)`, 150, 34);
+    ctx.fillText(`Cash: $${state.cash.toFixed(2)}`, 28, 78);
+
+    const fuelText = mowerUsesFuel()
+      ? `${mower.fuel.toFixed(2)} / ${mower.fuelCapacity.toFixed(2)} gal`
+      : 'N/A (manual)';
+    ctx.fillText(`Fuel: ${fuelText}`, 28, 100);
+    ctx.fillText(`Type: ${mower.typeLabel}`, 28, 122);
+
+    ctx.fillText(`Music: ${state.musicMuted ? 'Off' : 'On'} (M)`, 220, 34);
+    ctx.fillText(`Crashes: ${state.totalCrashes}`, 220, 56);
+    ctx.fillText(`Mode: ${state.mode}`, 220, 78);
+    if (mowerUsesFuel()) {
+      ctx.fillText(`Refill: E ($${FUEL_PRICE_PER_GALLON.toFixed(2)}/gal)`, 220, 100);
+    }
 
     if (state.mode === 'start') {
       overlayMessage('MoGrassMoMoney', 'Draw a mowing path with left mouse. Accept to run it, or Retry to redraw.');
-      overlayMessage('Click to begin planning', 'Press R to reset, F for fullscreen, M to toggle music.', 40);
+      overlayMessage('Click to begin planning', 'Press E to refill, R to reset, F for fullscreen, M to toggle music.', 40);
     } else if (state.mode === 'review') {
       overlayMessage('Review Path', 'Click Accept to execute this route, or Retry to draw again.');
       drawReviewButtons();
     } else if (state.mode === 'animating') {
-      overlayMessage('Executing Route', 'Mower is following your planned path. Hold Space to fast-forward.', -226);
+      const animatingSubtitle = pathState.pausedForFuel
+        ? `Out of fuel. Press E to refill ($${FUEL_PRICE_PER_GALLON.toFixed(2)}/gal) and continue.`
+        : 'Mower is following your planned path. Hold Space to fast-forward.';
+      overlayMessage('Executing Route', animatingSubtitle, -226);
     } else if (state.mode === 'won') {
       overlayMessage('Job complete!', `Coverage ${state.coverage.toFixed(1)}%. Final cash: $${state.cash}. Press R to restart.`);
     } else if (state.mode === 'drawing' && pathState.draftPoints.length < 2) {
@@ -1093,6 +1203,7 @@
     mower.x = scene.lawn.x + 72;
     mower.y = scene.lawn.y + 58;
     mower.heading = 0;
+    mower.fuel = mower.fuelCapacity;
 
     state.elapsed = 0;
     state.lastWinAt = null;
@@ -1196,6 +1307,11 @@
       setMusicMuted(!music.muted);
     }
 
+    if (event.key.toLowerCase() === 'e') {
+      tryRefillMower();
+      return;
+    }
+
     if (event.code === 'Space' && state.mode === 'animating') {
       input.fastForward = true;
       event.preventDefault();
@@ -1249,6 +1365,7 @@
       },
       playback: {
         is_animating: state.mode === 'animating',
+        waiting_for_fuel: pathState.pausedForFuel,
         progress_0_to_1: pathState.totalLength > 0
           ? Number((pathState.progress / pathState.totalLength).toFixed(4))
           : 0,
@@ -1260,9 +1377,11 @@
         current_heading_radians: Number(mower.heading.toFixed(3)),
       },
       economy: {
-        cash: state.cash,
+        cash: Number(state.cash.toFixed(2)),
         total_crashes: state.totalCrashes,
         last_penalty: state.lastPenalty,
+        refill_price_per_gallon: FUEL_PRICE_PER_GALLON,
+        refill_cost: Number(getRefillCost().toFixed(2)),
       },
       effects: {
         active_penalty_popups: penaltyPopups.length,
@@ -1273,6 +1392,12 @@
         heading_radians: Number(mower.heading.toFixed(3)),
         body_radius: mower.radius,
         deck_radius: mower.deckRadius,
+        type_id: mower.typeId,
+        type_label: mower.typeLabel,
+        uses_fuel: mowerUsesFuel(),
+        fuel: Number(mower.fuel.toFixed(2)),
+        fuel_capacity: mower.fuelCapacity,
+        fuel_burn_per_pixel: mower.fuelBurnPerPixel,
       },
       collision_debug: {
         overlapping_obstacle_ids: overlappingObstacleIds.slice(),
@@ -1292,7 +1417,7 @@
         fast_forward: input.fastForward,
         music_muted: state.musicMuted,
       },
-      objective: 'Draw a route, accept it, and mow 95% of mowable grass while minimizing crash penalties.',
+      objective: 'Draw a route, accept it, refill fuel when needed, and reach 95% coverage while minimizing crash penalties.',
     };
 
     return JSON.stringify(payload);
