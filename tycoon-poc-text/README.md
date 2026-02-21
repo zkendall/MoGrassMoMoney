@@ -95,6 +95,5 @@ open "http://127.0.0.1:4174/?seed=2"
   - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/regression.spec.js --config=playwright.config.js --headed`
 - Update golden baselines after intentional behavior changes:
   - `cd tycoon-poc-text && TYCOON_BASE_URL=http://127.0.0.1:4174 UPDATE_GOLDEN=1 npx playwright test tests/regression.spec.js --config=playwright.config.js`
-- Compatibility note:
+- Script note:
   - `test:regression`, `test:regression:update`, and `verify:quick` npm scripts call Playwright Test directly.
-  - Legacy `scripts/run-regression-tests.js` remains as a compatibility delegator for `--suite regression|quick|all` and optional `--url`.

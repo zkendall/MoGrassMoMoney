@@ -10,10 +10,14 @@ This document captures the pre-migration test baseline and records parity checks
 - Implemented Playwright regression spec: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/tests/regression.spec.js`
 - Implemented Playwright quick-verify spec: `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/tests/quick-verify.spec.js`
 - Switched `test:regression` and `verify:quick` to direct Playwright CLI execution (`npx playwright test ...`).
-- Removed dedicated wrapper scripts:
+- Removed legacy wrapper/compatibility scripts:
   - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-playwright-regression.js`
   - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-playwright-quick-verify.js`
-- Kept `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js` as a compatibility delegator for `--suite regression|quick|all` and optional `--url`.
+  - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/run-regression-tests.js`
+  - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.js`
+  - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-quick.sh`
+  - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-headed-runner.js`
+  - `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/scripts/verify-tycoon-actions.json`
 
 ## Scope Baseline (Pre-Migration)
 
@@ -242,5 +246,4 @@ Items left unchecked are pending CI execution or intentional negative-case valid
 
 ## Cutover Rule
 
-Legacy wrapper-script cutover is complete (`run-playwright-regression.js`, `run-playwright-quick-verify.js` removed).
-Keep `run-regression-tests.js` only as a temporary compatibility entrypoint while external callers migrate.
+Legacy wrapper-script cutover is complete; the active entrypoints are direct Playwright CLI/npm scripts only.
