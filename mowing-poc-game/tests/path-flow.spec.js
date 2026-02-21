@@ -1,17 +1,7 @@
 const { test, expect } = require('playwright/test');
 const { createGameDriver } = require('./helpers/game-driver.js');
 
-const SAFE_PATH_A = [
-  { x: 190, y: 180 },
-  { x: 760, y: 180 },
-];
-
-const SAFE_PATH_B = [
-  { x: 190, y: 200 },
-  { x: 760, y: 200 },
-];
-
-async function advanceUntil(driver, predicate, { maxSteps = 200, stepMs = 60 } = {}) {
+async function advanceUntil(driver, predicate, { maxSteps = 260, stepMs = 60 } = {}) {
   for (let i = 0; i < maxSteps; i += 1) {
     const state = await driver.readState();
     if (predicate(state)) {
@@ -22,6 +12,39 @@ async function advanceUntil(driver, predicate, { maxSteps = 200, stepMs = 60 } =
   return driver.readState();
 }
 
+function buildSafeHorizontalPath(state, yOffset = 44) {
+  const lawn = state.map.lawn;
+  const left = lawn.x + 46;
+  const right = lawn.x + lawn.w - 46;
+  const y = lawn.y + yOffset;
+  return [
+    { x: left, y },
+    { x: right, y },
+  ];
+}
+
+function buildLongZigzagPath(state, laneCount = 14) {
+  const lawn = state.map.lawn;
+  const left = lawn.x + 42;
+  const right = lawn.x + lawn.w - 42;
+  const top = lawn.y + 54;
+  const bottom = lawn.y + lawn.h - 54;
+  const height = Math.max(20, bottom - top);
+  const step = Math.max(16, height / Math.max(2, laneCount));
+  const points = [];
+
+  for (let i = 0; i <= laneCount; i += 1) {
+    const y = Math.min(bottom, top + i * step);
+    if (i % 2 === 0) {
+      points.push({ x: left, y }, { x: right, y });
+    } else {
+      points.push({ x: right, y }, { x: left, y });
+    }
+  }
+
+  return points;
+}
+
 test('drawing -> review -> retry -> drawing -> accept -> animating -> complete', async ({ page }) => {
   const driver = createGameDriver(page);
 
@@ -29,9 +52,18 @@ test('drawing -> review -> retry -> drawing -> accept -> animating -> complete',
   await driver.waitForRenderApi();
 
   let state = await driver.readState();
-  expect(state.mode).toBe('start');
+  expect(state.mode).toBe('menu');
 
-  await driver.drawPath(SAFE_PATH_A);
+  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'medium' });
+  state = await driver.readState();
+  expect(state.mode).toBe('start');
+  expect(state.mower.type_id).toBe('small_gas');
+  expect(state.map.id).toBe('medium');
+
+  const safePathA = buildSafeHorizontalPath(state, 44);
+  const safePathB = buildSafeHorizontalPath(state, 72);
+
+  await driver.drawPath(safePathA);
   state = await driver.readState();
   expect(state.mode).toBe('review');
   expect(state.planning.point_count).toBeGreaterThan(1);
@@ -42,7 +74,7 @@ test('drawing -> review -> retry -> drawing -> accept -> animating -> complete',
   expect(state.mode).toBe('drawing');
   expect(state.planning.point_count).toBe(0);
 
-  await driver.drawPath(SAFE_PATH_B);
+  await driver.drawPath(safePathB);
   state = await driver.readState();
   expect(state.mode).toBe('review');
 
@@ -62,7 +94,7 @@ test('drawing -> review -> retry -> drawing -> accept -> animating -> complete',
   expect(state.mower.fuel).toBeLessThan(startFuel);
 
   state = await advanceUntil(driver, (snapshot) => snapshot.mode !== 'animating', {
-    maxSteps: 300,
+    maxSteps: 380,
     stepMs: 60,
   });
 
@@ -75,12 +107,10 @@ test('holding Space fast-forwards mower playback speed', async ({ page }) => {
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await driver.waitForRenderApi();
+  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'large' });
 
-  const longPath = [
-    { x: 190, y: 180 },
-    { x: 760, y: 180 },
-    { x: 760, y: 560 },
-  ];
+  const stateAtStart = await driver.readState();
+  const longPath = buildLongZigzagPath(stateAtStart, 8);
 
   await driver.drawPath(longPath);
   await driver.clickReviewButton('Accept');
@@ -108,28 +138,15 @@ test('holding Space fast-forwards mower playback speed', async ({ page }) => {
   driver.expectNoConsoleErrors();
 });
 
-test('small mower empties tank and requires paid refill to continue', async ({ page }) => {
+test('small gas mower empties tank and requires paid refill to continue', async ({ page }) => {
   const driver = createGameDriver(page);
 
-  await page.goto('/?mower_type=small', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await driver.waitForRenderApi();
+  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'large' });
 
-  const depletionPath = [
-    { x: 180, y: 180 },
-    { x: 760, y: 180 },
-    { x: 760, y: 200 },
-    { x: 180, y: 200 },
-    { x: 180, y: 220 },
-    { x: 760, y: 220 },
-    { x: 760, y: 200 },
-    { x: 180, y: 200 },
-    { x: 180, y: 180 },
-    { x: 760, y: 180 },
-    { x: 760, y: 200 },
-    { x: 180, y: 200 },
-    { x: 180, y: 220 },
-    { x: 760, y: 220 },
-  ];
+  const startState = await driver.readState();
+  const depletionPath = buildLongZigzagPath(startState, 20);
 
   await driver.drawPath(depletionPath);
   await driver.clickReviewButton('Accept');
@@ -138,7 +155,7 @@ test('small mower empties tank and requires paid refill to continue', async ({ p
     snapshot.mode === 'animating'
       && snapshot.playback.waiting_for_fuel
       && snapshot.mower.fuel <= 0.01
-  ), { maxSteps: 420, stepMs: 60 });
+  ), { maxSteps: 620, stepMs: 60 });
 
   expect(state.mode).toBe('animating');
   expect(state.playback.waiting_for_fuel).toBe(true);
@@ -160,28 +177,26 @@ test('small mower empties tank and requires paid refill to continue', async ({ p
   expect(state.economy.cash).toBeCloseTo(cashBeforeRefill - refillCost, 2);
   expect(state.economy.refill_cost).toBeCloseTo(0, 2);
 
-  await driver.advance(120);
+  await driver.advance(160);
   state = await driver.readState();
   expect(state.playback.progress_0_to_1).toBeGreaterThan(pausedProgress);
 
   driver.expectNoConsoleErrors();
 });
 
-test('push mower uses no fuel', async ({ page }) => {
+test('manual mower uses no fuel', async ({ page }) => {
   const driver = createGameDriver(page);
 
-  await page.goto('/?mower_type=push', { waitUntil: 'domcontentloaded' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await driver.waitForRenderApi();
+  await driver.setupFromMenu({ mowerId: 'manual', lawnId: 'small' });
 
   let state = await driver.readState();
-  expect(state.mower.type_id).toBe('push');
+  expect(state.mower.type_id).toBe('manual');
   expect(state.mower.uses_fuel).toBe(false);
   expect(state.mower.fuel_capacity).toBe(0);
 
-  await driver.drawPath([
-    { x: 190, y: 200 },
-    { x: 760, y: 200 },
-  ]);
+  await driver.drawPath(buildSafeHorizontalPath(state, 52));
   await driver.clickReviewButton('Accept');
   await driver.advance(1000);
 

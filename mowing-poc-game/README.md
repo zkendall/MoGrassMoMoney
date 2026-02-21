@@ -1,6 +1,6 @@
 # Mowing POC Game
 
-Simple single-scene top-down mowing prototype based on `POC-Mowing.md`.
+Top-down mowing prototype based on `POC-Mowing.md`, now with a required setup menu.
 
 ## Run locally
 
@@ -13,28 +13,48 @@ python3 -m http.server 4173
 
 Open: `http://localhost:4173`
 
+## Flow
+
+- Open setup menu (`mode=menu`)
+- Choose a mower and lawn map
+- Start job (`mode=start`)
+- Draw route -> review (`Accept`/`Retry`) -> animate route
+- Continue route attempts until reset (`R` returns to setup menu)
+
+## Setup Menu Options
+
+- Mowers:
+  - `manual`: slowest, zero fuel use
+  - `small_gas`: medium speed, `0.5 gal` tank
+  - `large_rider`: fastest, widest deck, `1.5 gal` tank
+- Lawn maps:
+  - `small`
+  - `medium`
+  - `large`
+
+Each lawn is a distinct map with different lawn/house/driveway geometry and obstacle layout.
+
 ## Controls
 
-- Left-click + drag: draw a mow route with the brush overlay
-- In review mode: click `Accept` to run the route or `Retry` to redraw
-- While route animation is running: hold `Space` to fast-forward mower playback
-- Press `E` to refill fuel (charged at `$3.00/gal`) when using a fuel-powered mower
-- `F`: fullscreen toggle
-- `R`: reset
-- `M`: music mute toggle
+- Setup menu:
+  - Mouse: click mower/lawn options and `Start Job`
+  - Keyboard: `Up/Down` section, `Left/Right` cycle option, `Enter`/`Space` activate
+- Gameplay:
+  - Left-click + drag: draw route with brush overlay
+  - Review mode: click `Accept` or `Retry`
+  - Animation: hold `Space` to fast-forward
+  - `E`: refill fuel (`$3.00/gal`) for fuel-powered mowers
+  - `F`: fullscreen toggle
+  - `R`: return to setup menu (session selections preserved)
+  - `M`: music mute toggle
 
-## Win condition
+## Win Condition
 
 Reach 95% mow coverage at the end of an accepted route animation.
 
 ## Current Behavior Notes
 
-- Progress persists across multiple accepted routes until reset.
-- During animation, the route is shown as a smoothed black dashed centerline (brush overlay hidden).
-- Crash penalties trigger when the route centerline overlaps an obstacle; each entry overlap applies `-$1` and a flip animation.
-- Fuel is contingent on mower type:
-  - Push mower: no fuel required.
-  - Small mower: `0.5 gal` tank.
-- Small mower fuel drains during route playback; when empty, route playback pauses until refilled, then continues from the same path position.
-- Refilling costs `$3.00` per gallon needed and deducts from cash.
-- Optional URL override: `?mower_type=push` or `?mower_type=small`.
+- During animation, the route is shown as a smoothed black dashed centerline (brush hidden).
+- Crash penalties trigger when the route centerline overlaps an obstacle; each entry applies `-$1` and a flip animation.
+- Fuel depletion pauses animation in place; refilling resumes the same route progress.
+- Session-only setup memory: pressing `R` returns to menu with previous selection preselected in the current tab.

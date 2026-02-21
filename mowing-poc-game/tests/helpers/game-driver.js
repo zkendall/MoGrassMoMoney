@@ -101,6 +101,81 @@ function createGameDriver(page) {
     await page.mouse.click(client.x, client.y, { button: 'left' });
   }
 
+  async function clickSetupButtonById(id) {
+    const state = await readState();
+    const buttons = state.setup?.buttons || [];
+    const button = buttons.find((candidate) => candidate.id === id);
+    if (!button) {
+      throw new Error(`Setup button not found: ${id}`);
+    }
+    if (!button.enabled) {
+      throw new Error(`Setup button disabled: ${id}`);
+    }
+    const target = {
+      x: button.x + button.w * 0.5,
+      y: button.y + button.h * 0.5,
+    };
+    const client = await worldToClient(target);
+    await page.mouse.click(client.x, client.y, { button: 'left' });
+  }
+
+  async function clickSetupOption(kind, id) {
+    const state = await readState();
+    const options = kind === 'mower'
+      ? (state.setup?.mower_options || [])
+      : (state.setup?.lawn_options || []);
+    const option = options.find((candidate) => candidate.id === id);
+    if (!option) {
+      throw new Error(`Setup option not found for ${kind}: ${id}`);
+    }
+    const rects = await page.evaluate((targetKind) => {
+      const api = window.render_game_to_text;
+      if (typeof api !== 'function') {
+        throw new Error('render_game_to_text unavailable');
+      }
+      const snapshot = JSON.parse(api());
+      return targetKind === 'mower'
+        ? snapshot.setup?.mower_option_hitboxes || []
+        : snapshot.setup?.lawn_option_hitboxes || [];
+    }, kind);
+
+    const hit = rects.find((candidate) => candidate.id === id);
+    if (!hit) {
+      throw new Error(`Setup option hitbox not found for ${kind}: ${id}`);
+    }
+    const client = await worldToClient({
+      x: hit.x + hit.w * 0.5,
+      y: hit.y + hit.h * 0.5,
+    });
+    await page.mouse.click(client.x, client.y, { button: 'left' });
+  }
+
+  async function selectMower(id) {
+    await clickSetupOption('mower', id);
+  }
+
+  async function selectLawn(id) {
+    await clickSetupOption('lawn', id);
+  }
+
+  async function clickStartJob() {
+    await clickSetupButtonById('start_job');
+  }
+
+  async function setupFromMenu({ mowerId, lawnId }) {
+    const state = await readState();
+    if (state.mode !== 'menu') {
+      throw new Error(`setupFromMenu expects mode=menu, got ${state.mode}`);
+    }
+    if (mowerId) {
+      await selectMower(mowerId);
+    }
+    if (lawnId) {
+      await selectLawn(lawnId);
+    }
+    await clickStartJob();
+  }
+
   async function sampleCanvasPixel(point) {
     return page.evaluate(({ x, y }) => {
       const canvas = document.getElementById('game');
@@ -127,6 +202,10 @@ function createGameDriver(page) {
     advance,
     drawPath,
     clickReviewButton,
+    selectMower,
+    selectLawn,
+    clickStartJob,
+    setupFromMenu,
     expectNoConsoleErrors,
     sampleCanvasPixel,
     worldToClient,

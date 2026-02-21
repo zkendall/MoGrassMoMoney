@@ -10,6 +10,7 @@ test('drawing shows both brush overlay and distinct centerline', async ({ page }
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await driver.waitForRenderApi();
+  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'medium' });
 
   const center = { x: 420, y: 200 };
   const brushOnly = { x: 420, y: 216 };

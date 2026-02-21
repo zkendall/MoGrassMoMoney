@@ -6,128 +6,82 @@ Build a playable proof of concept focused on one top-down mowing minigame.
 This POC should prove:
 - Mowing feels satisfying moment-to-moment.
 - Mowed vs unmowed state is immediately readable.
-- A single lawn scene can support clean pathing and obstacle navigation.
+- Distinct lawn layouts and mower loadouts change route-planning decisions.
 
 ## Scope (In)
-- One lawn scene only.
-- One mower controlled by the player from top-down view.
-- No player character model (mower-only control).
-- Basic collision with a small set of obstacles.
+- Required setup menu before gameplay.
+- Three mower types: `manual`, `small_gas`, `large_rider`.
+- Three distinct lawn maps: `small`, `medium`, `large`.
+- Route drawing + review (`Accept` / `Retry`) + playback loop.
+- Basic collision with static obstacles.
 - Lawn state change from unmowed to mowed.
 - Simple win condition based on mowing coverage.
 
 ## Scope (Out)
 - Business management systems.
-- Upgrades, economy, customers, or progression.
-- Multiple regions or weather systems.
-- NPCs, crew members, or pedestrians.
-- Polished VFX/audio beyond basic feedback.
+- Meta progression, upgrades, customers.
+- NPC pedestrians/crew.
+- Complex weather/day-night systems.
 
 ## Core Gameplay
-Player plans a mowing route by drawing it, reviews that route, then watches the mower execute it. As the mower runs the accepted route, lawn cells change from unmowed to mowed.
+Player selects mower + lawn in a setup menu, then plans a mowing route by drawing it, reviews that route, then watches the mower execute it.
 
 ### Controls (POC)
-- Left-click + drag to draw a route using a circular brush overlay.
-- Release to enter review mode.
-- In review mode, click `Accept` to execute the route or `Retry` to redraw.
-- During animation, hold `Space` to fast-forward playback.
-- Press `E` to refill fuel for fuel-powered mower types.
-- `F` toggles fullscreen, `R` resets progress, and `M` toggles music.
+- Menu:
+  - Mouse: click mower/lawn options and `Start Job`.
+  - Keyboard: `Up/Down` section, `Left/Right` cycle options, `Enter`/`Space` activate.
+- Gameplay:
+  - Left-click + drag: draw a route with circular brush overlay.
+  - Release: enter review mode.
+  - Review: click `Accept` to execute or `Retry` to redraw.
+  - During animation: hold `Space` to fast-forward.
+  - `E`: refill fuel for fuel-powered mowers.
+  - `F`: fullscreen, `R`: return to setup menu, `M`: music toggle.
 
 ### Mowing Rules
 - Grass starts in `unmowed` state.
 - Grass under mower deck changes to `mowed`.
 - Mowed grass stays mowed (no regrowth in-session).
-- Coverage percent updates as the accepted route is animated.
-- Coverage persists across route attempts until reset.
-- The level completes when an animation run finishes and coverage is at least the target threshold (95%).
-- During playback, only the centerline is shown (black dashed line); brush swath visualization is hidden.
-- Fuel behavior is mower-type dependent:
-  - Push mower uses no fuel.
-  - Small mower has a `0.5 gal` tank.
-- Small mower fuel drains during route animation movement; when empty, route execution pauses until refilled, then resumes from that same route position.
-- Refilling costs `$3.00` per gallon added.
-- Mower type can be selected via query (`?mower_type=push` or `?mower_type=small`) for prototype tuning/testing.
+- Coverage persists across route attempts until reset/menu return.
+- Level completes when a route animation finishes and coverage is at least target threshold (95%).
+- During playback, only centerline is shown (black dashed); brush swath is hidden.
 
-### Failure/Constraint Rules (Minimal)
-- Crash checks use the route centerline position (line-overlap behavior), not mower body width.
-- On each obstacle entry overlap during playback, the mower performs a flip, a red `-$1` popup appears, and animation continues.
-- Route playback is clamped to lawn bounds; leaving bounds does not apply a boundary crash penalty.
-- No timer is used in the current prototype.
+### Mower Rules
+- `manual`: no fuel usage.
+- `small_gas`: `0.5 gal` tank.
+- `large_rider`: `1.5 gal` tank, faster, wider deck.
+- Fuel drains during route animation for gas mowers.
+- When fuel reaches zero, route execution pauses in place.
+- Refilling (`E`) costs `$3.00` per gallon and resumes the same path position.
 
-## One Lawn Scene Specification
-Create exactly one small-to-medium suburban lawn designed for readability.
+### Failure/Constraint Rules
+- Crash checks use route centerline overlap, not mower body width.
+- On each new obstacle entry overlap during playback: mower flips, `-$1` popup appears, and animation continues.
+- Route playback is clamped to lawn bounds; leaving bounds does not apply boundary crash penalty.
 
-### Scene Layout
-- Rectangular play area with clear boundaries.
-- House footprint at top edge (non-playable block).
-- Driveway strip on one side (non-grass surface).
-- Main mowable lawn area as the central play space.
-- 3-5 static obstacles (example: tree, flower bed, rock, sprinkler, garden gnome).
+## Lawn Maps
+Provide three distinct maps with unique geometry and obstacle arrangements:
+- `small`: tighter mow area and obstacle spacing.
+- `medium`: baseline suburban lot.
+- `large`: wider estate-style layout with more obstacle routing variance.
 
-### Camera
-- Fixed top-down camera.
-- Keep entire lawn visible or near-visible without dramatic zoom.
-- Prioritize gameplay readability over cinematic framing.
-
-## Art Direction for POC (Very Simple)
-Keep art intentionally simple and functional.
-
-### Grass Readability Requirement
-Use only two lawn states:
-1. `Unmowed`: one base color + one simple texture.
-2. `Mowed`: one different base color + one different simple texture.
-
-Implementation guidance:
-- Ensure clear value/hue contrast between states.
-- Textures should be subtle but visibly different at gameplay zoom.
-- Avoid noisy detail or high-frequency patterns.
-
-### Style Constraints
-- Flat/shaded 2D top-down sprites/tiles.
-- Minimal palette.
-- No detailed character art.
-- No complex lighting or shader effects required.
-
-## Asset List (Separate Assets Per Object)
-Create separate files/assets for each object (no single merged scene painting).
-
-### Required Assets
-- Lawn base (unmowed texture/material).
-- Lawn mowed overlay/variant (mowed texture/material).
-- Mower sprite set (top-down): idle, move, optional turn variants.
-- House footprint sprite.
-- Driveway tile/sprite.
-- Fence or boundary edge pieces.
-- Obstacle sprites (separate asset each):
-  - Tree
-  - Flower bed
-  - Rock
-  - Sprinkler
-  - Garden gnome
-
-### Optional Supporting Assets
-- Simple wheel-track or cut feedback decal.
-- Basic UI elements: coverage meter, completion text.
+Each map contains:
+- Lawn bounds (mowable region)
+- House block (non-mowable)
+- Driveway block (non-mowable)
+- 4-6 static obstacles
 
 ## Technical Prototype Notes
-- Track mow coverage by grid cells, tile states, or render mask.
-- Update visual state immediately when mower overlaps unmowed area.
-- Keep logic deterministic and easy to debug.
-- Favor simple collision shapes (box/circle) for obstacles.
+- Coverage tracked by mow grid cells.
+- Deterministic hooks exposed:
+  - `window.render_game_to_text()`
+  - `window.advanceTime(ms)`
+- `render_game_to_text` includes setup/menu metadata, map geometry, mower stats, economy, playback, and collision debug fields.
 
 ## Success Criteria
-POC is successful when all conditions are true:
-- Player can draw, review, and execute routes in a clear loop.
-- Lawn clearly transitions between unmowed and mowed visuals.
-- Coverage percentage can be built over multiple runs and reaches completion target.
-- Obstacles create routing decisions with clear feedback via line-overlap crash penalties.
-- All scene objects are separate assets.
-
-## Build Order
-1. Block out lawn scene and boundaries.
-2. Implement route drawing + review flow (`Accept` / `Retry`).
-3. Implement route playback animation and mow-state updates (unmowed -> mowed).
-4. Add crash handling, penalties, and feedback during playback.
-5. Add coverage tracking with end-of-route win evaluation.
-6. Hook up simple temporary art assets and polish readability.
+POC is successful when:
+- Menu gating works (`menu -> start -> drawing/review/animating`).
+- All mower + lawn combinations are playable.
+- Lawn visuals clearly transition unmowed -> mowed.
+- Coverage and crash penalties behave consistently across maps.
+- Fuel pause/refill/resume behavior works for gas mowers.

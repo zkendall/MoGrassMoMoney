@@ -35,53 +35,61 @@
     grassSprites.mowedLoaded = true;
   };
 
-  const scene = {
-    lawn: { x: 145, y: 130, w: 665, h: 455 },
-    house: { x: 95, y: 20, w: 770, h: 95 },
-    driveway: { x: 760, y: 115, w: 90, h: 500 },
-    targetCoverage: 95,
-  };
-
-  const obstacles = [
-    { id: 'tree', kind: 'circle', x: 305, y: 280, r: 30 },
-    { id: 'flower-bed', kind: 'rect', x: 490, y: 225, w: 125, h: 56 },
-    { id: 'rock', kind: 'circle', x: 650, y: 320, r: 23 },
-    { id: 'sprinkler', kind: 'circle', x: 360, y: 465, r: 17 },
-    { id: 'gnome', kind: 'rect', x: 592, y: 458, w: 26, h: 30 },
-  ];
-
   const FUEL_PRICE_PER_GALLON = 3;
   const MOWER_TYPES = {
-    push: {
-      label: 'Push Mower',
+    manual: {
+      id: 'manual',
+      label: 'Manual Push',
+      playbackSpeed: 95,
+      deckRadius: 22,
       fuelCapacity: 0,
       fuelBurnPerPixel: 0,
     },
-    small: {
-      label: 'Small Mower',
+    small_gas: {
+      id: 'small_gas',
+      label: 'Small Gas',
+      playbackSpeed: 120,
+      deckRadius: 26,
       fuelCapacity: 0.5,
       fuelBurnPerPixel: 0.0002,
     },
+    large_rider: {
+      id: 'large_rider',
+      label: 'Large Rider',
+      playbackSpeed: 158,
+      deckRadius: 34,
+      fuelCapacity: 1.5,
+      fuelBurnPerPixel: 0.00032,
+    },
   };
-  const DEFAULT_MOWER_TYPE_ID = 'small';
-  const mowerTypeFromQuery = new URLSearchParams(window.location.search).get('mower_type');
-  const activeMowerTypeId = MOWER_TYPES[mowerTypeFromQuery]
-    ? mowerTypeFromQuery
-    : DEFAULT_MOWER_TYPE_ID;
-  const defaultMowerType = MOWER_TYPES[activeMowerTypeId];
+  const DEFAULT_MOWER_TYPE_ID = 'small_gas';
+  const LAWN_MAPS = typeof window.createMowingLawnMaps === 'function'
+    ? window.createMowingLawnMaps()
+    : window.MOWING_LAWN_MAPS;
+  if (!LAWN_MAPS) {
+    throw new Error('Missing lawn maps registry. Ensure maps.js loads before game.js.');
+  }
+  const DEFAULT_LAWN_MAP_ID = 'medium';
+
+  let activeScene = { ...LAWN_MAPS[DEFAULT_LAWN_MAP_ID].scene };
+  let activeObstacles = LAWN_MAPS[DEFAULT_LAWN_MAP_ID].obstacles.map((obstacle) => ({ ...obstacle }));
+  let lastSelections = {
+    mowerId: null,
+    lawnId: null,
+  };
 
   const mower = {
-    x: scene.lawn.x + 72,
-    y: scene.lawn.y + 58,
+    x: activeScene.lawn.x + 72,
+    y: activeScene.lawn.y + 58,
     heading: 0,
     radius: 18,
-    deckRadius: 26,
-    playbackSpeed: 120,
-    typeId: activeMowerTypeId,
-    typeLabel: defaultMowerType.label,
-    fuelCapacity: defaultMowerType.fuelCapacity,
-    fuel: defaultMowerType.fuelCapacity,
-    fuelBurnPerPixel: defaultMowerType.fuelBurnPerPixel,
+    deckRadius: MOWER_TYPES[DEFAULT_MOWER_TYPE_ID].deckRadius,
+    playbackSpeed: MOWER_TYPES[DEFAULT_MOWER_TYPE_ID].playbackSpeed,
+    typeId: DEFAULT_MOWER_TYPE_ID,
+    typeLabel: MOWER_TYPES[DEFAULT_MOWER_TYPE_ID].label,
+    fuelCapacity: MOWER_TYPES[DEFAULT_MOWER_TYPE_ID].fuelCapacity,
+    fuel: MOWER_TYPES[DEFAULT_MOWER_TYPE_ID].fuelCapacity,
+    fuelBurnPerPixel: MOWER_TYPES[DEFAULT_MOWER_TYPE_ID].fuelBurnPerPixel,
   };
 
   const input = {
@@ -100,7 +108,7 @@
   };
 
   const state = {
-    mode: 'start',
+    mode: 'menu',
     elapsed: 0,
     coverage: 0,
     lastWinAt: null,
@@ -110,6 +118,14 @@
     lastPenalty: 0,
     transientMessage: '',
     transientTimer: 0,
+    selectedMowerId: null,
+    selectedLawnId: null,
+    activeMapId: DEFAULT_LAWN_MAP_ID,
+    menu: {
+      section: 0,
+      buttonIndex: 0,
+      buttons: [],
+    },
   };
 
   const pathState = {
@@ -141,6 +157,15 @@
     height: 50,
     gap: 24,
     y: WORLD.height - 95,
+  };
+
+  const menuLayout = {
+    panel: { x: 120, y: 94, w: 720, h: 492 },
+    optionWidth: 180,
+    optionHeight: 44,
+    optionGap: 14,
+    startButton: { id: 'start_job', label: 'Start Job', x: 270, y: 500, w: 220, h: 50 },
+    resetButton: { id: 'reset_defaults', label: 'Reset Defaults', x: 510, y: 500, w: 220, h: 50 },
   };
 
   const music = {
@@ -239,15 +264,15 @@
 
   function isPointMowable(x, y) {
     if (
-      x < scene.lawn.x ||
-      x > scene.lawn.x + scene.lawn.w ||
-      y < scene.lawn.y ||
-      y > scene.lawn.y + scene.lawn.h
+      x < activeScene.lawn.x ||
+      x > activeScene.lawn.x + activeScene.lawn.w ||
+      y < activeScene.lawn.y ||
+      y > activeScene.lawn.y + activeScene.lawn.h
     ) {
       return false;
     }
 
-    for (const obstacle of obstacles) {
+    for (const obstacle of activeObstacles) {
       if (obstacle.kind === 'circle') {
         const dx = x - obstacle.x;
         const dy = y - obstacle.y;
@@ -346,8 +371,8 @@
 
   function clampPointToPlaybackBounds(point) {
     return {
-      x: clamp(point.x, scene.lawn.x + mower.radius, scene.lawn.x + scene.lawn.w - mower.radius),
-      y: clamp(point.y, scene.lawn.y + mower.radius, scene.lawn.y + scene.lawn.h - mower.radius),
+      x: clamp(point.x, activeScene.lawn.x + mower.radius, activeScene.lawn.x + activeScene.lawn.w - mower.radius),
+      y: clamp(point.y, activeScene.lawn.y + mower.radius, activeScene.lawn.y + activeScene.lawn.h - mower.radius),
     };
   }
 
@@ -629,7 +654,7 @@
 
   function getObstacleOverlapIds(x, y, r) {
     const ids = [];
-    for (const obstacle of obstacles) {
+    for (const obstacle of activeObstacles) {
       if (obstacle.kind === 'circle') {
         const dx = x - obstacle.x;
         const dy = y - obstacle.y;
@@ -820,7 +845,7 @@
     if (pathState.progress >= pathState.totalLength) {
       clearPlaybackPath();
       clearDraftPath();
-      if (state.coverage >= scene.targetCoverage) {
+      if (state.coverage >= activeScene.targetCoverage) {
         state.mode = 'won';
         state.lastWinAt = state.elapsed;
       } else {
@@ -872,21 +897,22 @@
     ctx.fillRect(0, 0, WORLD.width, WORLD.height);
 
     ctx.fillStyle = '#d3c4aa';
-    ctx.fillRect(scene.house.x, scene.house.y, scene.house.w, scene.house.h);
+    ctx.fillRect(activeScene.house.x, activeScene.house.y, activeScene.house.w, activeScene.house.h);
     ctx.fillStyle = '#ae8f6f';
-    ctx.fillRect(scene.house.x + 18, scene.house.y + 14, scene.house.w - 36, 20);
+    ctx.fillRect(activeScene.house.x + 18, activeScene.house.y + 14, activeScene.house.w - 36, 20);
 
     ctx.fillStyle = '#b7b0a0';
-    ctx.fillRect(scene.driveway.x, scene.driveway.y, scene.driveway.w, scene.driveway.h);
+    ctx.fillRect(activeScene.driveway.x, activeScene.driveway.y, activeScene.driveway.w, activeScene.driveway.h);
 
     drawMowGrid();
 
     ctx.strokeStyle = '#e8dfcf';
     ctx.lineWidth = 4;
-    ctx.strokeRect(scene.lawn.x, scene.lawn.y, scene.lawn.w, scene.lawn.h);
+    ctx.strokeRect(activeScene.lawn.x, activeScene.lawn.y, activeScene.lawn.w, activeScene.lawn.h);
 
-    for (const obstacle of obstacles) {
-      if (obstacle.id === 'tree') {
+    for (const obstacle of activeObstacles) {
+      const style = obstacle.style || obstacle.id;
+      if (style.includes('tree')) {
         ctx.fillStyle = '#6e4f33';
         ctx.beginPath();
         ctx.arc(obstacle.x, obstacle.y + 8, 10, 0, Math.PI * 2);
@@ -898,7 +924,7 @@
         continue;
       }
 
-      if (obstacle.id === 'flower-bed') {
+      if (style.includes('flower-bed')) {
         ctx.fillStyle = '#7a5e45';
         ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
         ctx.fillStyle = '#d9899e';
@@ -912,7 +938,7 @@
         continue;
       }
 
-      if (obstacle.id === 'rock') {
+      if (style.includes('rock')) {
         ctx.fillStyle = '#70767b';
         ctx.beginPath();
         ctx.arc(obstacle.x, obstacle.y, obstacle.r, 0, Math.PI * 2);
@@ -920,7 +946,7 @@
         continue;
       }
 
-      if (obstacle.id === 'sprinkler') {
+      if (style.includes('sprinkler')) {
         ctx.fillStyle = '#8aa9bf';
         ctx.beginPath();
         ctx.arc(obstacle.x, obstacle.y, obstacle.r, 0, Math.PI * 2);
@@ -933,7 +959,7 @@
         continue;
       }
 
-      if (obstacle.id === 'gnome') {
+      if (style.includes('gnome')) {
         ctx.fillStyle = '#f5e0c4';
         ctx.fillRect(obstacle.x, obstacle.y + 10, obstacle.w, obstacle.h - 10);
         ctx.fillStyle = '#c6534a';
@@ -1098,14 +1124,299 @@
     ctx.fillText(subtitle, x + 24, y + 65);
   }
 
+  function menuStartEnabled() {
+    return Boolean(MOWER_TYPES[state.selectedMowerId] && LAWN_MAPS[state.selectedLawnId]);
+  }
+
+  function getMenuButtons() {
+    return [
+      {
+        ...menuLayout.startButton,
+        enabled: menuStartEnabled(),
+      },
+      {
+        ...menuLayout.resetButton,
+        enabled: true,
+      },
+    ];
+  }
+
+  function getMenuOptionRects() {
+    const mowerIds = Object.keys(MOWER_TYPES);
+    const lawnIds = Object.keys(LAWN_MAPS);
+
+    const mowerStartX = menuLayout.panel.x + 32;
+    const mowerY = menuLayout.panel.y + 150;
+    const lawnStartX = menuLayout.panel.x + 32;
+    const lawnY = menuLayout.panel.y + 282;
+
+    const mowerOptions = mowerIds.map((id, index) => ({
+      id,
+      label: MOWER_TYPES[id].label,
+      x: mowerStartX + index * (menuLayout.optionWidth + menuLayout.optionGap),
+      y: mowerY,
+      w: menuLayout.optionWidth,
+      h: menuLayout.optionHeight,
+      selected: id === state.selectedMowerId,
+    }));
+
+    const lawnOptions = lawnIds.map((id, index) => ({
+      id,
+      label: LAWN_MAPS[id].label,
+      x: lawnStartX + index * (menuLayout.optionWidth + menuLayout.optionGap),
+      y: lawnY,
+      w: menuLayout.optionWidth,
+      h: menuLayout.optionHeight,
+      selected: id === state.selectedLawnId,
+    }));
+
+    return { mowerOptions, lawnOptions };
+  }
+
+  function applySelectedSetup() {
+    const mowerType = MOWER_TYPES[state.selectedMowerId] || MOWER_TYPES[DEFAULT_MOWER_TYPE_ID];
+    const lawnMap = LAWN_MAPS[state.selectedLawnId] || LAWN_MAPS[DEFAULT_LAWN_MAP_ID];
+
+    state.activeMapId = lawnMap.id;
+    activeScene = { ...lawnMap.scene };
+    activeObstacles = lawnMap.obstacles.map((obstacle) => ({ ...obstacle }));
+
+    mower.typeId = mowerType.id;
+    mower.typeLabel = mowerType.label;
+    mower.playbackSpeed = mowerType.playbackSpeed;
+    mower.deckRadius = mowerType.deckRadius;
+    mower.fuelCapacity = mowerType.fuelCapacity;
+    mower.fuelBurnPerPixel = mowerType.fuelBurnPerPixel;
+    mower.fuel = mower.fuelCapacity;
+    pathState.brushRadius = mower.deckRadius;
+
+    mower.x = activeScene.lawn.x + 72;
+    mower.y = activeScene.lawn.y + 58;
+    mower.heading = 0;
+
+    state.elapsed = 0;
+    state.lastWinAt = null;
+    state.coverage = 0;
+    state.cash = 0;
+    state.totalCrashes = 0;
+    state.lastPenalty = 0;
+    state.transientMessage = '';
+    state.transientTimer = 0;
+
+    input.pointerDown = false;
+    input.pointer = { x: mower.x, y: mower.y };
+    input.fastForward = false;
+
+    clearDraftPath();
+    clearPlaybackPath();
+    penaltyPopups.length = 0;
+    initMowGrid();
+  }
+
+  function startGameFromMenu() {
+    if (!menuStartEnabled()) {
+      markTransientMessage('Select mower and lawn to start.');
+      return;
+    }
+
+    lastSelections = {
+      mowerId: state.selectedMowerId,
+      lawnId: state.selectedLawnId,
+    };
+    applySelectedSetup();
+    state.mode = 'start';
+  }
+
+  function resetMenuDefaults() {
+    state.selectedMowerId = DEFAULT_MOWER_TYPE_ID;
+    state.selectedLawnId = DEFAULT_LAWN_MAP_ID;
+    state.menu.section = 0;
+    state.menu.buttonIndex = 0;
+    markTransientMessage('Menu reset to defaults.');
+  }
+
+  function openMenu() {
+    input.pointerDown = false;
+    clearDraftPath();
+    clearPlaybackPath();
+    penaltyPopups.length = 0;
+    state.transientMessage = '';
+    state.transientTimer = 0;
+    state.selectedMowerId = lastSelections.mowerId;
+    state.selectedLawnId = lastSelections.lawnId;
+    state.menu.section = 0;
+    state.menu.buttonIndex = 0;
+    applySelectedSetup();
+    state.mode = 'menu';
+  }
+
+  function handleMenuClick(point) {
+    if (state.mode !== 'menu') return;
+    const { mowerOptions, lawnOptions } = getMenuOptionRects();
+
+    for (const option of mowerOptions) {
+      if (pointInRect(point, option)) {
+        state.selectedMowerId = option.id;
+        state.menu.section = 0;
+        return;
+      }
+    }
+    for (const option of lawnOptions) {
+      if (pointInRect(point, option)) {
+        state.selectedLawnId = option.id;
+        state.menu.section = 1;
+        return;
+      }
+    }
+
+    const buttons = getMenuButtons();
+    for (let i = 0; i < buttons.length; i += 1) {
+      const button = buttons[i];
+      if (!pointInRect(point, button)) continue;
+      state.menu.section = 2;
+      state.menu.buttonIndex = i;
+      if (button.id === 'start_job' && button.enabled) {
+        startGameFromMenu();
+      } else if (button.id === 'start_job') {
+        markTransientMessage('Select mower and lawn to start.');
+      } else if (button.id === 'reset_defaults') {
+        resetMenuDefaults();
+      }
+      return;
+    }
+  }
+
+  function getMenuCursorInfo() {
+    const mowerIds = Object.keys(MOWER_TYPES);
+    const lawnIds = Object.keys(LAWN_MAPS);
+    const mowerIndex = Math.max(0, mowerIds.indexOf(state.selectedMowerId));
+    const lawnIndex = Math.max(0, lawnIds.indexOf(state.selectedLawnId));
+    return { mowerIds, lawnIds, mowerIndex, lawnIndex };
+  }
+
+  function shiftMenuSelection(direction) {
+    const info = getMenuCursorInfo();
+    if (state.menu.section === 0) {
+      const nextIndex = (info.mowerIndex + direction + info.mowerIds.length) % info.mowerIds.length;
+      state.selectedMowerId = info.mowerIds[nextIndex];
+    } else if (state.menu.section === 1) {
+      const nextIndex = (info.lawnIndex + direction + info.lawnIds.length) % info.lawnIds.length;
+      state.selectedLawnId = info.lawnIds[nextIndex];
+    } else if (state.menu.section === 2) {
+      const buttons = getMenuButtons();
+      state.menu.buttonIndex = (state.menu.buttonIndex + direction + buttons.length) % buttons.length;
+    }
+  }
+
+  function activateMenuSection() {
+    if (state.menu.section === 2) {
+      const buttons = getMenuButtons();
+      const activeButton = buttons[state.menu.buttonIndex] || buttons[0];
+      if (activeButton.id === 'start_job') {
+        startGameFromMenu();
+      } else {
+        resetMenuDefaults();
+      }
+      return;
+    }
+    if (!menuStartEnabled()) {
+      markTransientMessage('Select mower and lawn to start.');
+      return;
+    }
+    startGameFromMenu();
+  }
+
+  function drawMenu() {
+    const panel = menuLayout.panel;
+    const { mowerOptions, lawnOptions } = getMenuOptionRects();
+    const buttons = getMenuButtons();
+    state.menu.buttons = buttons.map((button) => ({ ...button }));
+
+    ctx.save();
+    drawRoundedRect(panel.x, panel.y, panel.w, panel.h, 18);
+    ctx.fillStyle = 'rgba(8, 15, 12, 0.86)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(220, 205, 164, 0.95)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#f4f0e0';
+    ctx.font = 'bold 34px "Trebuchet MS", sans-serif';
+    ctx.fillText('MoGrassMoMoney Setup', panel.x + 28, panel.y + 52);
+    ctx.font = '16px "Trebuchet MS", sans-serif';
+    ctx.fillText('Pick your mower and lawn map before starting the route-planning loop.', panel.x + 28, panel.y + 78);
+
+    ctx.font = 'bold 20px "Trebuchet MS", sans-serif';
+    ctx.fillText('Mower Type', panel.x + 28, panel.y + 126);
+    for (const option of mowerOptions) {
+      drawRoundedRect(option.x, option.y, option.w, option.h, 10);
+      ctx.fillStyle = option.selected ? '#2f7f48' : 'rgba(48, 64, 55, 0.94)';
+      ctx.fill();
+      ctx.strokeStyle = option.selected ? '#e9e2ca' : 'rgba(168, 178, 171, 0.8)';
+      ctx.lineWidth = state.menu.section === 0 && option.selected ? 3 : 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#f4f0e0';
+      ctx.font = '16px "Trebuchet MS", sans-serif';
+      ctx.fillText(option.label, option.x + 12, option.y + 28);
+    }
+
+    ctx.font = 'bold 20px "Trebuchet MS", sans-serif';
+    ctx.fillText('Lawn Map', panel.x + 28, panel.y + 258);
+    for (const option of lawnOptions) {
+      drawRoundedRect(option.x, option.y, option.w, option.h, 10);
+      ctx.fillStyle = option.selected ? '#2f7f48' : 'rgba(48, 64, 55, 0.94)';
+      ctx.fill();
+      ctx.strokeStyle = option.selected ? '#e9e2ca' : 'rgba(168, 178, 171, 0.8)';
+      ctx.lineWidth = state.menu.section === 1 && option.selected ? 3 : 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#f4f0e0';
+      ctx.font = '16px "Trebuchet MS", sans-serif';
+      ctx.fillText(option.label, option.x + 12, option.y + 28);
+    }
+
+    for (const button of buttons) {
+      drawRoundedRect(button.x, button.y, button.w, button.h, 12);
+      const isPrimary = button.id === 'start_job';
+      if (!button.enabled) {
+        ctx.fillStyle = 'rgba(86, 86, 86, 0.82)';
+      } else {
+        ctx.fillStyle = isPrimary ? '#2d7f49' : '#8b5d3c';
+      }
+      ctx.fill();
+      const isFocused = state.menu.section === 2 && buttons[state.menu.buttonIndex]?.id === button.id;
+      ctx.strokeStyle = isFocused
+        ? '#f7efd0'
+        : 'rgba(236, 233, 218, 0.95)';
+      ctx.lineWidth = isFocused ? 3 : 2;
+      ctx.stroke();
+      ctx.fillStyle = '#f4f0e0';
+      ctx.font = 'bold 20px "Trebuchet MS", sans-serif';
+      const textWidth = ctx.measureText(button.label).width;
+      ctx.fillText(button.label, button.x + (button.w - textWidth) * 0.5, button.y + 32);
+    }
+
+    ctx.font = '15px "Trebuchet MS", sans-serif';
+    ctx.fillStyle = 'rgba(240, 235, 219, 0.95)';
+    ctx.fillText('Mouse: click options and Start Job. Keyboard: Up/Down section, Left/Right cycle, Enter/Space start.', panel.x + 28, panel.y + panel.h - 18);
+    ctx.restore();
+  }
+
   function drawUi() {
+    if (state.mode === 'menu') {
+      drawMenu();
+      if (state.transientMessage) {
+        overlayMessage(state.transientMessage, 'Choose your setup and start the job.', 220);
+      }
+      return;
+    }
+
     ctx.fillStyle = 'rgb(20 30 24 / 72%)';
     ctx.fillRect(16, 12, 410, 126);
 
     ctx.fillStyle = '#f4f0e0';
     ctx.font = '16px "Trebuchet MS", sans-serif';
     ctx.fillText(`Coverage: ${state.coverage.toFixed(1)}%`, 28, 34);
-    ctx.fillText(`Target: ${scene.targetCoverage}%`, 28, 56);
+    ctx.fillText(`Target: ${activeScene.targetCoverage}%`, 28, 56);
     ctx.fillText(`Cash: $${state.cash.toFixed(2)}`, 28, 78);
 
     const fuelText = mowerUsesFuel()
@@ -1123,7 +1434,7 @@
 
     if (state.mode === 'start') {
       overlayMessage('MoGrassMoMoney', 'Draw a mowing path with left mouse. Accept to run it, or Retry to redraw.');
-      overlayMessage('Click to begin planning', 'Press E to refill, R to reset, F for fullscreen, M to toggle music.', 40);
+      overlayMessage('Click to begin planning', 'Press E to refill, R to return to setup, F for fullscreen, M to toggle music.', 40);
     } else if (state.mode === 'review') {
       overlayMessage('Review Path', 'Click Accept to execute this route, or Retry to draw again.');
       drawReviewButtons();
@@ -1199,31 +1510,8 @@
     drawPenaltyPopups();
   }
 
-  function resetGame(startDrawing = false) {
-    mower.x = scene.lawn.x + 72;
-    mower.y = scene.lawn.y + 58;
-    mower.heading = 0;
-    mower.fuel = mower.fuelCapacity;
-
-    state.elapsed = 0;
-    state.lastWinAt = null;
-    state.coverage = 0;
-    state.cash = 0;
-    state.totalCrashes = 0;
-    state.lastPenalty = 0;
-    state.transientMessage = '';
-    state.transientTimer = 0;
-
-    input.pointerDown = false;
-    input.pointer = { x: mower.x, y: mower.y };
-    input.fastForward = false;
-
-    clearDraftPath();
-    clearPlaybackPath();
-    penaltyPopups.length = 0;
-
-    initMowGrid();
-    state.mode = startDrawing ? 'drawing' : 'start';
+  function resetGame() {
+    openMenu();
   }
 
   function canvasPointFromEvent(event) {
@@ -1244,6 +1532,11 @@
     input.pointer = { ...point };
 
     if (event.button !== 0) {
+      return;
+    }
+
+    if (state.mode === 'menu') {
+      handleMenuClick(point);
       return;
     }
 
@@ -1300,7 +1593,7 @@
     }
 
     if (event.key.toLowerCase() === 'r') {
-      resetGame(false);
+      resetGame();
     }
 
     if (event.key.toLowerCase() === 'm') {
@@ -1312,13 +1605,41 @@
       return;
     }
 
+    if (state.mode === 'menu') {
+      if (event.key === 'ArrowUp') {
+        state.menu.section = (state.menu.section + 2) % 3;
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'ArrowDown') {
+        state.menu.section = (state.menu.section + 1) % 3;
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'ArrowLeft') {
+        shiftMenuSelection(-1);
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'ArrowRight') {
+        shiftMenuSelection(1);
+        event.preventDefault();
+        return;
+      }
+      if (event.key === 'Enter' || event.code === 'Space' || event.key === ' ') {
+        activateMenuSection();
+        event.preventDefault();
+        return;
+      }
+    }
+
     if (event.code === 'Space' && state.mode === 'animating') {
       input.fastForward = true;
       event.preventDefault();
       return;
     }
 
-    if (event.key === ' ' && state.mode === 'start') {
+    if ((event.key === ' ' || event.code === 'Space') && state.mode === 'start') {
       state.mode = 'drawing';
       event.preventDefault();
     }
@@ -1331,10 +1652,10 @@
   });
 
   function renderGameToText() {
-    const visibleObstacles = obstacles.map((o) => (
+    const visibleObstacles = activeObstacles.map((o) => (
       o.kind === 'circle'
-        ? { id: o.id, kind: o.kind, x: o.x, y: o.y, r: o.r }
-        : { id: o.id, kind: o.kind, x: o.x, y: o.y, w: o.w, h: o.h }
+        ? { id: o.id, style: o.style, kind: o.kind, x: o.x, y: o.y, r: o.r }
+        : { id: o.id, style: o.style, kind: o.kind, x: o.x, y: o.y, w: o.w, h: o.h }
     ));
 
     const reviewButtons = getReviewButtons().map((button) => ({
@@ -1346,12 +1667,52 @@
       h: Number(button.h.toFixed(2)),
       enabled: Boolean(button.enabled),
     }));
+    const menuOptionRects = getMenuOptionRects();
 
     const payload = {
       coordinate_system: 'origin top-left; +x right; +y down; units in canvas pixels',
       mode: state.mode,
       coverage_percent: Number(state.coverage.toFixed(2)),
-      target_percent: scene.targetCoverage,
+      target_percent: activeScene.targetCoverage,
+      setup: {
+        menu_active: state.mode === 'menu',
+        selected_mower_id: state.selectedMowerId,
+        selected_lawn_id: state.selectedLawnId,
+        start_enabled: menuStartEnabled(),
+        mower_options: Object.keys(MOWER_TYPES).map((id) => ({
+          id,
+          label: MOWER_TYPES[id].label,
+          selected: id === state.selectedMowerId,
+        })),
+        lawn_options: Object.keys(LAWN_MAPS).map((id) => ({
+          id,
+          label: LAWN_MAPS[id].label,
+          selected: id === state.selectedLawnId,
+        })),
+        mower_option_hitboxes: menuOptionRects.mowerOptions.map((option) => ({
+          id: option.id,
+          x: Number(option.x.toFixed(2)),
+          y: Number(option.y.toFixed(2)),
+          w: Number(option.w.toFixed(2)),
+          h: Number(option.h.toFixed(2)),
+        })),
+        lawn_option_hitboxes: menuOptionRects.lawnOptions.map((option) => ({
+          id: option.id,
+          x: Number(option.x.toFixed(2)),
+          y: Number(option.y.toFixed(2)),
+          w: Number(option.w.toFixed(2)),
+          h: Number(option.h.toFixed(2)),
+        })),
+        buttons: getMenuButtons().map((button) => ({
+          id: button.id,
+          label: button.label,
+          x: Number(button.x.toFixed(2)),
+          y: Number(button.y.toFixed(2)),
+          w: Number(button.w.toFixed(2)),
+          h: Number(button.h.toFixed(2)),
+          enabled: Boolean(button.enabled),
+        })),
+      },
       planning: {
         is_drawing: state.mode === 'drawing' && input.pointerDown,
         point_count: pathState.draftPoints.length,
@@ -1403,9 +1764,10 @@
         overlapping_obstacle_ids: overlappingObstacleIds.slice(),
       },
       map: {
-        lawn: scene.lawn,
-        house_block: scene.house,
-        driveway_block: scene.driveway,
+        id: state.activeMapId,
+        lawn: activeScene.lawn,
+        house_block: activeScene.house,
+        driveway_block: activeScene.driveway,
         obstacles: visibleObstacles,
       },
       input: {
@@ -1417,7 +1779,7 @@
         fast_forward: input.fastForward,
         music_muted: state.musicMuted,
       },
-      objective: 'Draw a route, accept it, refill fuel when needed, and reach 95% coverage while minimizing crash penalties.',
+      objective: 'Pick mower + lawn, draw routes, accept playback, and reach 95% coverage while minimizing crash penalties.',
     };
 
     return JSON.stringify(payload);
@@ -1451,7 +1813,7 @@
 
   window.render_game_to_text = renderGameToText;
 
-  resetGame(false);
+  resetGame();
   render();
   requestAnimationFrame(frame);
 })();
