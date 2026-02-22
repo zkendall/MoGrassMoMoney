@@ -1220,11 +1220,11 @@
     }
   }
 
-  function overlayMessage(title, subtitle, offset = 0) {
-    const w = 620;
-    const h = 92;
-    const x = (WORLD.width - w) * 0.5;
-    const y = (WORLD.height - h) * 0.5 + offset;
+  function drawInstructionToast(title, subtitle, options = {}) {
+    const w = options.width || 620;
+    const h = options.height || 92;
+    const x = options.x ?? (WORLD.width - w) * 0.5;
+    const y = options.y ?? (WORLD.height - h - 18);
 
     ctx.fillStyle = 'rgb(12 18 14 / 72%)';
     ctx.fillRect(x, y, w, h);
@@ -1237,6 +1237,22 @@
     ctx.fillText(title, x + 24, y + 38);
     ctx.font = '16px "Trebuchet MS", sans-serif';
     ctx.fillText(subtitle, x + 24, y + 65);
+  }
+
+  function drawStatusBar() {
+    ctx.fillStyle = 'rgb(20 30 24 / 72%)';
+    ctx.fillRect(16, 12, 285, 104);
+
+    ctx.fillStyle = '#f4f0e0';
+    ctx.font = '16px "Trebuchet MS", sans-serif';
+    ctx.fillText(`Coverage: ${state.coverage.toFixed(1)}%`, 28, 34);
+    ctx.fillText(`Target: ${activeScene.targetCoverage}%`, 28, 56);
+    ctx.fillText(`Cash: $${state.cash.toFixed(2)}`, 28, 78);
+
+    const fuelText = mowerUsesFuel()
+      ? `${mower.fuel.toFixed(2)} / ${mower.fuelCapacity.toFixed(2)} gal`
+      : 'N/A (manual)';
+    ctx.fillText(`Fuel: ${fuelText}`, 28, 100);
   }
 
   function menuStartEnabled() {
@@ -1542,52 +1558,38 @@
     if (state.mode === 'menu') {
       drawMenu();
       if (state.transientMessage) {
-        overlayMessage(state.transientMessage, 'Choose your setup and start the job.', 220);
+        drawInstructionToast(state.transientMessage, 'Choose your setup and start the job.');
       }
       return;
     }
 
-    ctx.fillStyle = 'rgb(20 30 24 / 72%)';
-    ctx.fillRect(16, 12, 410, 126);
-
-    ctx.fillStyle = '#f4f0e0';
-    ctx.font = '16px "Trebuchet MS", sans-serif';
-    ctx.fillText(`Coverage: ${state.coverage.toFixed(1)}%`, 28, 34);
-    ctx.fillText(`Target: ${activeScene.targetCoverage}%`, 28, 56);
-    ctx.fillText(`Cash: $${state.cash.toFixed(2)}`, 28, 78);
-
-    const fuelText = mowerUsesFuel()
-      ? `${mower.fuel.toFixed(2)} / ${mower.fuelCapacity.toFixed(2)} gal`
-      : 'N/A (manual)';
-    ctx.fillText(`Fuel: ${fuelText}`, 28, 100);
-    ctx.fillText(`Type: ${mower.typeLabel}`, 28, 122);
-
-    ctx.fillText(`Music: ${state.musicMuted ? 'Off' : 'On'} (M)`, 220, 34);
-    ctx.fillText(`Crashes: ${state.totalCrashes}`, 220, 56);
-    ctx.fillText(`Mode: ${state.mode}`, 220, 78);
-    if (mowerUsesFuel()) {
-      ctx.fillText(`Refill: E ($${FUEL_PRICE_PER_GALLON.toFixed(2)}/gal)`, 220, 100);
-    }
+    drawStatusBar();
 
     if (state.mode === 'start') {
-      overlayMessage('MoGrassMoMoney', 'Draw a mowing path with left mouse. Accept to run it, or Retry to redraw.');
-      overlayMessage('Click to begin planning', 'Press E to refill, R to return to setup, F for fullscreen, M to toggle music.', 40);
+      drawInstructionToast(
+        'Click to begin planning',
+        'Draw with left mouse. Accept/Retry after release. E refill, R menu, F fullscreen, M music.'
+      );
     } else if (state.mode === 'review') {
-      overlayMessage('Review Path', 'Click Accept to execute this route, or Retry to draw again.');
+      drawInstructionToast(
+        'Review Path',
+        'Click Accept to execute this route, or Retry to draw again.',
+        { y: WORLD.height - 208 }
+      );
       drawReviewButtons();
     } else if (state.mode === 'animating') {
       const animatingSubtitle = pathState.pausedForFuel
         ? `Out of fuel. Press E to refill ($${FUEL_PRICE_PER_GALLON.toFixed(2)}/gal) and continue.`
         : 'Mower is following your planned path. Hold Space to fast-forward.';
-      overlayMessage('Executing Route', animatingSubtitle, -226);
+      drawInstructionToast('Executing Route', animatingSubtitle);
     } else if (state.mode === 'won') {
-      overlayMessage('Job complete!', `Coverage ${state.coverage.toFixed(1)}%. Final cash: $${state.cash}. Press R to restart.`);
+      drawInstructionToast('Job complete!', `Coverage ${state.coverage.toFixed(1)}%. Final cash: $${state.cash}. Press R to restart.`);
     } else if (state.mode === 'drawing' && pathState.draftPoints.length < 2) {
-      overlayMessage('Plan Your Route', 'Click and drag to draw a mow path.', -226);
+      drawInstructionToast('Plan Your Route', 'Click and drag to draw a mow path.');
     }
 
     if (state.transientMessage) {
-      overlayMessage(state.transientMessage, 'Adjust your path and try again.', 220);
+      drawInstructionToast(state.transientMessage, 'Adjust your path and try again.');
     }
   }
 
