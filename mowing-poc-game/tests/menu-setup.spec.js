@@ -56,3 +56,29 @@ test('R returns to menu and preserves prior session setup selection', async ({ p
   expect(state.mower.type_id).toBe('manual');
   expect(state.map.id).toBe('small');
 });
+
+test('all lawn maps report art-backed backgrounds and mask-based mowing', async ({ page }) => {
+  const driver = createGameDriver(page);
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await driver.waitForRenderApi();
+
+  for (const lawnId of ['small', 'medium', 'large']) {
+    await driver.setupFromMenu({ mowerId: 'manual', lawnId });
+    await page.waitForFunction(() => {
+      const snapshot = JSON.parse(window.render_game_to_text());
+      return snapshot.map?.art?.base?.loaded && snapshot.map?.art?.mow_mask?.loaded;
+    });
+
+    const state = await driver.readState();
+    expect(state.map.id).toBe(lawnId);
+    expect(state.map.art.enabled).toBe(true);
+    expect(state.map.art.background_source).toBe('art');
+    expect(state.map.art.mow_source).toBe('mask');
+    expect(state.map.art.collision_source).toBe('obstacles');
+
+    if (lawnId !== 'large') {
+      await page.keyboard.press('r');
+    }
+  }
+});

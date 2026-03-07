@@ -74,12 +74,20 @@ Each map contains:
 
 Non-mowable yard features are not crash obstacles; only static obstacles apply crash penalties.
 
+Current prototype note:
+- `small`, `medium`, and `large` now run through the same art-backed map pipeline:
+  - baked placeholder background art at `assets/maps/<map-id>/base.png`
+  - mowability seeded from `assets/maps/<map-id>/mow-mask.png`
+  - generated `guide.png` + `collision-mask.png` kept alongside each map's assets
+  - crash penalties still use obstacle geometry in v1
+
 ## Technical Prototype Notes
 - Coverage tracked by mow grid cells.
+- Placeholder art assets for all maps can be regenerated from current geometry with `python3 scripts/generate_map_assets.py`.
 - Deterministic hooks exposed:
   - `window.render_game_to_text()`
   - `window.advanceTime(ms)`
-- `render_game_to_text` includes setup/menu metadata, map geometry, mower stats, economy, playback, and collision debug fields.
+- `render_game_to_text` includes setup/menu metadata, map geometry, mower stats, economy, playback, collision debug fields, and active map-art diagnostics (`background_source`, `mow_source`, asset loaded/error state).
 
 ## Success Criteria
 POC is successful when:

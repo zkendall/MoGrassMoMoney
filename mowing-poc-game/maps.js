@@ -4,6 +4,14 @@
       small: {
         id: 'small',
         label: 'Small Lawn',
+        art: {
+          enabled: true,
+          baseSrc: 'assets/maps/small/base.png',
+          mowMaskSrc: 'assets/maps/small/mow-mask.png',
+          collisionMaskSrc: 'assets/maps/small/collision-mask.png',
+          guideSrc: 'assets/maps/small/guide.png',
+          promptSpecSrc: 'assets/maps/small/base-imagegen-prompt.md',
+        },
         scene: {
           lawn: {
             kind: 'circle',
@@ -35,6 +43,14 @@
       medium: {
         id: 'medium',
         label: 'Medium Lawn',
+        art: {
+          enabled: true,
+          baseSrc: 'assets/maps/medium/base.png',
+          mowMaskSrc: 'assets/maps/medium/mow-mask.png',
+          collisionMaskSrc: 'assets/maps/medium/collision-mask.png',
+          guideSrc: 'assets/maps/medium/guide.png',
+          promptSpecSrc: 'assets/maps/medium/base-imagegen-prompt.md',
+        },
         scene: {
           lawn: { x: 145, y: 130, w: 665, h: 455 },
           house: { x: 95, y: 20, w: 770, h: 95 },
@@ -52,6 +68,14 @@
       large: {
         id: 'large',
         label: 'Large Estate',
+        art: {
+          enabled: true,
+          baseSrc: 'assets/maps/large/base.png',
+          mowMaskSrc: 'assets/maps/large/mow-mask.png',
+          collisionMaskSrc: 'assets/maps/large/collision-mask.png',
+          guideSrc: 'assets/maps/large/guide.png',
+          promptSpecSrc: 'assets/maps/large/base-imagegen-prompt.md',
+        },
         scene: {
           lawn: { x: 95, y: 125, w: 735, h: 470 },
           house: { x: 60, y: 20, w: 805, h: 92 },

@@ -7,17 +7,18 @@
     height: canvas.height,
   };
 
+  const MOWER_SPRITE_ASSETS = {
+    mowerSheet: createImageAsset('assets/mower-sheet.png'),
+    pushManual16: createImageAsset('assets/push-mower-16dir.png'),
+  };
+
   const mowerSprite = {
-    image: new Image(),
-    loaded: false,
+    assetId: 'mowerSheet',
     frame: { x: 256, y: 0, w: 256, h: 256 },
     drawW: 54,
     drawH: 54,
     headingOffset: -Math.PI / 2,
-  };
-  mowerSprite.image.src = 'assets/mower-sheet.png';
-  mowerSprite.image.onload = () => {
-    mowerSprite.loaded = true;
+    directionalFrames: null,
   };
 
   const grassSprites = {
@@ -44,8 +45,10 @@
       deckRadius: 22,
       fuelCapacity: 0,
       fuelBurnPerPixel: 0,
+      spriteAssetId: 'pushManual16',
       spriteFrame: { x: 0, y: 0, w: 256, h: 256 },
-      spriteDraw: { w: 50, h: 50 },
+      spriteDirectionalFrames: { frameW: 320, frameH: 320, columns: 4, count: 16 },
+      spriteDraw: { w: 62, h: 62 },
     },
     small_gas: {
       id: 'small_gas',
@@ -54,6 +57,7 @@
       deckRadius: 26,
       fuelCapacity: 0.5,
       fuelBurnPerPixel: 0.0002,
+      spriteAssetId: 'mowerSheet',
       spriteFrame: { x: 256, y: 0, w: 256, h: 256 },
       spriteDraw: { w: 54, h: 54 },
     },
@@ -64,6 +68,7 @@
       deckRadius: 34,
       fuelCapacity: 1.5,
       fuelBurnPerPixel: 0.00032,
+      spriteAssetId: 'mowerSheet',
       // Tight crop of row 2, col 3 orange rider to avoid neighboring bleed.
       spriteFrame: { x: 537, y: 348, w: 192, h: 164 },
       spriteDraw: { w: 72, h: 72 },
@@ -77,12 +82,14 @@
     throw new Error('Missing lawn maps registry. Ensure maps.js loads before game.js.');
   }
   const DEFAULT_LAWN_MAP_ID = 'medium';
+  const MAP_ART_ASSETS = createMapArtRegistry(LAWN_MAPS);
 
   let activeScene = { ...LAWN_MAPS[DEFAULT_LAWN_MAP_ID].scene };
   let activeObstacles = LAWN_MAPS[DEFAULT_LAWN_MAP_ID].obstacles.map((obstacle) => ({ ...obstacle }));
   let activeYardFeatures = Array.isArray(activeScene.yardFeatures)
     ? activeScene.yardFeatures.map((feature) => ({ ...feature }))
     : [];
+  let activeMapArt = MAP_ART_ASSETS[DEFAULT_LAWN_MAP_ID] || null;
   let lastSelections = {
     mowerId: null,
     lawnId: null,
@@ -264,6 +271,108 @@
     setMusicMuted(music.muted);
   }
 
+  function createImageAsset(src, options = {}) {
+    if (!src) return null;
+
+    const asset = {
+      src,
+      image: new Image(),
+      loaded: false,
+      error: false,
+      width: 0,
+      height: 0,
+      imageData: null,
+      isMask: options.isMask === true,
+    };
+
+    asset.image.onload = () => {
+      asset.loaded = true;
+      asset.width = asset.image.naturalWidth || asset.image.width || 0;
+      asset.height = asset.image.naturalHeight || asset.image.height || 0;
+      if (asset.isMask) {
+        try {
+          const buffer = document.createElement('canvas');
+          buffer.width = asset.width;
+          buffer.height = asset.height;
+          const bufferCtx = buffer.getContext('2d', { willReadFrequently: true });
+          bufferCtx.drawImage(asset.image, 0, 0, asset.width, asset.height);
+          asset.imageData = bufferCtx.getImageData(0, 0, asset.width, asset.height).data;
+        } catch (error) {
+          asset.error = true;
+          asset.imageData = null;
+        }
+      }
+    };
+    asset.image.onerror = () => {
+      asset.error = true;
+    };
+    asset.image.src = src;
+
+    return asset;
+  }
+
+  function createMapArtRegistry(lawnMaps) {
+    const registry = {};
+
+    for (const lawnMap of Object.values(lawnMaps)) {
+      if (!lawnMap?.art?.enabled) {
+        continue;
+      }
+
+      registry[lawnMap.id] = {
+        enabled: true,
+        base: createImageAsset(lawnMap.art.baseSrc),
+        mowMask: createImageAsset(lawnMap.art.mowMaskSrc, { isMask: true }),
+        collisionMask: createImageAsset(lawnMap.art.collisionMaskSrc, { isMask: true }),
+        foreground: createImageAsset(lawnMap.art.foregroundSrc),
+      };
+    }
+
+    return registry;
+  }
+
+  function hasActiveBaseArt() {
+    return Boolean(activeMapArt?.base?.loaded && !activeMapArt.base.error);
+  }
+
+  function hasActiveForegroundArt() {
+    return Boolean(activeMapArt?.foreground?.loaded && !activeMapArt.foreground.error);
+  }
+
+  function hasActiveMowMask() {
+    return Boolean(
+      activeMapArt?.mowMask?.loaded
+        && !activeMapArt.mowMask.error
+        && activeMapArt.mowMask.imageData
+    );
+  }
+
+  function sampleMaskAsset(asset, x, y) {
+    if (!asset?.imageData || !asset.width || !asset.height) {
+      return false;
+    }
+
+    const sampleX = clamp(Math.floor((x / WORLD.width) * asset.width), 0, asset.width - 1);
+    const sampleY = clamp(Math.floor((y / WORLD.height) * asset.height), 0, asset.height - 1);
+    const idx = (sampleY * asset.width + sampleX) * 4;
+    const colorMax = Math.max(
+      asset.imageData[idx],
+      asset.imageData[idx + 1],
+      asset.imageData[idx + 2]
+    );
+    const alpha = asset.imageData[idx + 3];
+
+    return colorMax >= 127 && alpha > 0;
+  }
+
+  function getActiveMowSource() {
+    return hasActiveMowMask() ? 'mask' : 'geometry';
+  }
+
+  function getActiveCollisionSource() {
+    return 'obstacles';
+  }
+
   function circleRectIntersects(cx, cy, cr, rect) {
     const nx = Math.max(rect.x, Math.min(cx, rect.x + rect.w));
     const ny = Math.max(rect.y, Math.min(cy, rect.y + rect.h));
@@ -342,7 +451,7 @@
     return false;
   }
 
-  function isPointMowable(x, y) {
+  function isPointMowableFromGeometry(x, y) {
     if (!isPointInsideLawn({ x, y })) {
       return false;
     }
@@ -369,6 +478,14 @@
     }
 
     return true;
+  }
+
+  function isPointMowable(x, y) {
+    if (hasActiveMowMask()) {
+      return sampleMaskAsset(activeMapArt.mowMask, x, y);
+    }
+
+    return isPointMowableFromGeometry(x, y);
   }
 
   function initMowGrid() {
@@ -446,6 +563,49 @@
     while (a > Math.PI) a -= Math.PI * 2;
     while (a < -Math.PI) a += Math.PI * 2;
     return a;
+  }
+
+  function normalizeAnglePositive(rad) {
+    let a = rad % (Math.PI * 2);
+    if (a < 0) {
+      a += Math.PI * 2;
+    }
+    return a;
+  }
+
+  function getDirectionalFrameSelection(config, rotationRad) {
+    if (!config) {
+      return null;
+    }
+
+    const step = (Math.PI * 2) / config.count;
+    const normalized = normalizeAnglePositive(rotationRad);
+    const index = Math.floor((normalized + step * 0.5) / step) % config.count;
+
+    return {
+      index,
+      frame: {
+        x: (index % config.columns) * config.frameW,
+        y: Math.floor(index / config.columns) * config.frameH,
+        w: config.frameW,
+        h: config.frameH,
+      },
+    };
+  }
+
+  function getMowerSpriteRenderState(headingRad) {
+    const rotationRad = headingRad + mowerSprite.headingOffset;
+    const directionalFrame = getDirectionalFrameSelection(
+      mowerSprite.directionalFrames,
+      rotationRad
+    );
+
+    return {
+      asset: MOWER_SPRITE_ASSETS[mowerSprite.assetId] || null,
+      frame: directionalFrame?.frame || mowerSprite.frame,
+      rotationRad: directionalFrame ? 0 : rotationRad,
+      directionalFrameIndex: directionalFrame?.index ?? null,
+    };
   }
 
   function clampPointToPlaybackBounds(point) {
@@ -1000,21 +1160,7 @@
     }
   }
 
-  function drawScene() {
-    ctx.fillStyle = '#9aa18d';
-    ctx.fillRect(0, 0, WORLD.width, WORLD.height);
-
-    ctx.fillStyle = '#d3c4aa';
-    ctx.fillRect(activeScene.house.x, activeScene.house.y, activeScene.house.w, activeScene.house.h);
-    ctx.fillStyle = '#ae8f6f';
-    ctx.fillRect(activeScene.house.x + 18, activeScene.house.y + 14, activeScene.house.w - 36, 20);
-
-    ctx.fillStyle = '#b7b0a0';
-    ctx.fillRect(activeScene.driveway.x, activeScene.driveway.y, activeScene.driveway.w, activeScene.driveway.h);
-
-    drawMowGrid();
-    drawYardFeatures();
-
+  function drawLawnBorder() {
     ctx.strokeStyle = '#e8dfcf';
     ctx.lineWidth = 4;
     if (activeScene.lawn.kind === 'circle') {
@@ -1024,7 +1170,9 @@
     } else {
       ctx.strokeRect(activeScene.lawn.x, activeScene.lawn.y, activeScene.lawn.w, activeScene.lawn.h);
     }
+  }
 
+  function drawProceduralObstacles() {
     for (const obstacle of activeObstacles) {
       const style = obstacle.style || obstacle.id;
       if (style.includes('tree')) {
@@ -1088,6 +1236,39 @@
     }
   }
 
+  function drawScene() {
+    ctx.fillStyle = '#9aa18d';
+    ctx.fillRect(0, 0, WORLD.width, WORLD.height);
+
+    if (hasActiveBaseArt()) {
+      ctx.drawImage(activeMapArt.base.image, 0, 0, WORLD.width, WORLD.height);
+      drawMowGrid();
+      drawLawnBorder();
+      return;
+    }
+
+    ctx.fillStyle = '#d3c4aa';
+    ctx.fillRect(activeScene.house.x, activeScene.house.y, activeScene.house.w, activeScene.house.h);
+    ctx.fillStyle = '#ae8f6f';
+    ctx.fillRect(activeScene.house.x + 18, activeScene.house.y + 14, activeScene.house.w - 36, 20);
+
+    ctx.fillStyle = '#b7b0a0';
+    ctx.fillRect(activeScene.driveway.x, activeScene.driveway.y, activeScene.driveway.w, activeScene.driveway.h);
+
+    drawMowGrid();
+    drawYardFeatures();
+    drawLawnBorder();
+    drawProceduralObstacles();
+  }
+
+  function drawForegroundArt() {
+    if (!hasActiveForegroundArt()) {
+      return;
+    }
+
+    ctx.drawImage(activeMapArt.foreground.image, 0, 0, WORLD.width, WORLD.height);
+  }
+
   function drawPathOverlay(points, options = {}) {
     if (points.length < 2) {
       return;
@@ -1140,16 +1321,19 @@
       headingToDraw = animationState.flipBaseHeading + t * Math.PI * 2;
     }
 
-    if (mowerSprite.loaded) {
+    const spriteRender = getMowerSpriteRenderState(headingToDraw);
+    if (spriteRender.asset?.loaded && !spriteRender.asset.error) {
       ctx.save();
       ctx.translate(mower.x, mower.y);
-      ctx.rotate(headingToDraw + mowerSprite.headingOffset);
+      if (!mowerSprite.directionalFrames) {
+        ctx.rotate(spriteRender.rotationRad);
+      }
       ctx.drawImage(
-        mowerSprite.image,
-        mowerSprite.frame.x,
-        mowerSprite.frame.y,
-        mowerSprite.frame.w,
-        mowerSprite.frame.h,
+        spriteRender.asset.image,
+        spriteRender.frame.x,
+        spriteRender.frame.y,
+        spriteRender.frame.w,
+        spriteRender.frame.h,
         -mowerSprite.drawW * 0.5,
         -mowerSprite.drawH * 0.5,
         mowerSprite.drawW,
@@ -1320,6 +1504,7 @@
     const lawnMap = LAWN_MAPS[state.selectedLawnId] || LAWN_MAPS[DEFAULT_LAWN_MAP_ID];
 
     state.activeMapId = lawnMap.id;
+    activeMapArt = MAP_ART_ASSETS[lawnMap.id] || null;
     activeScene = { ...lawnMap.scene };
     activeObstacles = lawnMap.obstacles.map((obstacle) => ({ ...obstacle }));
     activeYardFeatures = Array.isArray(lawnMap.scene.yardFeatures)
@@ -1333,6 +1518,10 @@
     mower.fuelCapacity = mowerType.fuelCapacity;
     mower.fuelBurnPerPixel = mowerType.fuelBurnPerPixel;
     mower.fuel = mower.fuelCapacity;
+    mowerSprite.assetId = mowerType.spriteAssetId || 'mowerSheet';
+    mowerSprite.directionalFrames = mowerType.spriteDirectionalFrames
+      ? { ...mowerType.spriteDirectionalFrames }
+      : null;
     if (mowerType.spriteFrame) {
       mowerSprite.frame = { ...mowerType.spriteFrame };
     }
@@ -1644,6 +1833,7 @@
     drawScene();
     drawRouteLayers();
     drawMower();
+    drawForegroundArt();
     drawPointerBrush();
     drawUi();
     drawPenaltyPopups();
@@ -1790,6 +1980,43 @@
     }
   });
 
+  function getMapArtDiagnostics(mapId = state.activeMapId) {
+    const lawnMap = LAWN_MAPS[mapId];
+    const artConfig = lawnMap?.art || null;
+    const artState = MAP_ART_ASSETS[mapId] || null;
+    const isActiveMap = mapId === state.activeMapId;
+
+    return {
+      enabled: Boolean(artConfig?.enabled),
+      active: Boolean(isActiveMap && artConfig?.enabled),
+      background_source: isActiveMap && hasActiveBaseArt() ? 'art' : 'procedural',
+      mow_source: isActiveMap ? getActiveMowSource() : 'geometry',
+      collision_source: isActiveMap ? getActiveCollisionSource() : 'obstacles',
+      guide_src: artConfig?.guideSrc || null,
+      prompt_spec_src: artConfig?.promptSpecSrc || null,
+      base: {
+        src: artConfig?.baseSrc || null,
+        loaded: Boolean(artState?.base?.loaded),
+        error: Boolean(artState?.base?.error),
+      },
+      mow_mask: {
+        src: artConfig?.mowMaskSrc || null,
+        loaded: Boolean(artState?.mowMask?.loaded),
+        error: Boolean(artState?.mowMask?.error),
+      },
+      collision_mask: {
+        src: artConfig?.collisionMaskSrc || null,
+        loaded: Boolean(artState?.collisionMask?.loaded),
+        error: Boolean(artState?.collisionMask?.error),
+      },
+      foreground: {
+        src: artConfig?.foregroundSrc || null,
+        loaded: Boolean(artState?.foreground?.loaded),
+        error: Boolean(artState?.foreground?.error),
+      },
+    };
+  }
+
   function renderGameToText() {
     const visibleObstacles = activeObstacles.map((o) => (
       o.kind === 'circle'
@@ -1842,6 +2069,7 @@
       enabled: Boolean(button.enabled),
     }));
     const menuOptionRects = getMenuOptionRects();
+    const mowerSpriteRender = getMowerSpriteRenderState(mower.heading);
 
     const payload = {
       coordinate_system: 'origin top-left; +x right; +y down; units in canvas pixels',
@@ -1933,6 +2161,8 @@
         fuel: Number(mower.fuel.toFixed(2)),
         fuel_capacity: mower.fuelCapacity,
         fuel_burn_per_pixel: mower.fuelBurnPerPixel,
+        sprite_asset_id: mowerSprite.assetId,
+        sprite_directional_frame_index: mowerSpriteRender.directionalFrameIndex,
       },
       collision_debug: {
         overlapping_obstacle_ids: overlappingObstacleIds.slice(),
@@ -1947,6 +2177,7 @@
         driveway_block: activeScene.driveway,
         yard_features: visibleYardFeatures,
         obstacles: visibleObstacles,
+        art: getMapArtDiagnostics(),
       },
       input: {
         pointer_down: input.pointerDown,
