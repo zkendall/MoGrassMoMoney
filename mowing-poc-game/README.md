@@ -28,16 +28,18 @@ Open: `http://localhost:4173`
   - `small_gas`: medium speed, `0.5 gal` tank
   - `large_rider`: fastest, widest deck, `1.5 gal` tank
 - Lawn maps:
+  - `empty_field`
   - `small`
   - `medium`
   - `large`
 
 Each lawn is a distinct map with different lawn/house/driveway geometry and obstacle layout.
+`empty_field` is a flat sandbox map with no props or non-mowable scene features, intended for grass-design and mechanics experiments.
 `small` is a circular island lawn inside a larger yard, with a pool and cement walk paths as non-mowable surfaces.
 
 ## Map Art Pipeline
 
-All three lawn maps now support the same art-backed asset layout:
+All four lawn maps now support the same art-backed asset layout:
 
 - `assets/maps/<map-id>/base.png`: current baked background art for the map.
 - `assets/maps/<map-id>/mow-mask.png`: binary mowability mask used to seed the mow grid.
@@ -46,9 +48,9 @@ All three lawn maps now support the same art-backed asset layout:
 
 Current behavior:
 
-- `small`, `medium`, and `large` render baked base art when their assets load.
-- All three maps use `mow-mask.png` for mowable vs non-mowable cells.
-- All three maps still use obstacle geometry for crash penalties in v1.
+- `empty_field`, `small`, `medium`, and `large` render baked base art when their assets load.
+- All four maps use `mow-mask.png` for mowable vs non-mowable cells.
+- Maps still use obstacle geometry for crash penalties in v1; `empty_field` simply has no obstacles.
 - If a map art asset fails to load, that map falls back to the existing geometric mowability/rendering path.
 
 Authoring note:

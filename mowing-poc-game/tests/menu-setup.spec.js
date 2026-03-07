@@ -20,6 +20,26 @@ test('initial mode is menu and start is disabled until setup complete', async ({
   expect(state.setup.start_enabled).toBe(true);
 });
 
+test('empty field map loads as an obstacle-free sandbox', async ({ page }) => {
+  const driver = createGameDriver(page);
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await driver.waitForRenderApi();
+
+  await driver.setupFromMenu({ mowerId: 'manual', lawnId: 'empty_field' });
+  await page.waitForFunction(() => {
+    const snapshot = JSON.parse(window.render_game_to_text());
+    return snapshot.map?.art?.base?.loaded && snapshot.map?.art?.mow_mask?.loaded;
+  });
+
+  const state = await driver.readState();
+  expect(state.map.id).toBe('empty_field');
+  expect(state.map.obstacles).toEqual([]);
+  expect(state.map.yard_features).toEqual([]);
+  expect(state.map.house_block.w).toBe(0);
+  expect(state.map.driveway_block.w).toBe(0);
+});
+
 test('menu selection applies mower/map config and start enters start mode', async ({ page }) => {
   const driver = createGameDriver(page);
 
@@ -63,7 +83,10 @@ test('all lawn maps report art-backed backgrounds and mask-based mowing', async 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await driver.waitForRenderApi();
 
-  for (const lawnId of ['small', 'medium', 'large']) {
+  const initialState = await driver.readState();
+  const lawnIds = (initialState.setup?.lawn_options || []).map((option) => option.id);
+
+  for (const lawnId of lawnIds) {
     await driver.setupFromMenu({ mowerId: 'manual', lawnId });
     await page.waitForFunction(() => {
       const snapshot = JSON.parse(window.render_game_to_text());
@@ -77,7 +100,7 @@ test('all lawn maps report art-backed backgrounds and mask-based mowing', async 
     expect(state.map.art.mow_source).toBe('mask');
     expect(state.map.art.collision_source).toBe('obstacles');
 
-    if (lawnId !== 'large') {
+    if (lawnId !== lawnIds[lawnIds.length - 1]) {
       await page.keyboard.press('r');
     }
   }

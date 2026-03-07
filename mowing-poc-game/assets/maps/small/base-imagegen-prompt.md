@@ -2,17 +2,17 @@
 
 Use case: stylized-concept
 Asset type: gameplay background for the `small` mowing map
-Primary request: top-down painted yard map for a lawn mowing game
+Primary request: top-down flat-indie yard map for a lawn mowing game
 Scene/background: cozy suburban backyard with a circular lawn island inside a larger yard
 Subject: house at the top, long driveway on the right, kidney-like pool on the right side of the lawn, pale cement walk paths near the bottom, tree, flower bed, rock, and sprinkler positioned as fixed yard obstacles
-Style/medium: top-down 2D painterly game art with clean readable silhouettes and subtle brush texture
+Style/medium: top-down 2D flat-color indie game art with clean readable silhouettes, gentle cel shading, light outline accents, and minimal texture
 Composition/framing: exact canvas framing for a 960x640 gameplay map, straight top-down camera, landmarks placed to match an existing gameplay guide, no perspective tilt
 Lighting/mood: warm late-afternoon light, soft friendly shadows, readable and uncluttered
 Color palette: muted earthy greens, warm beige house siding, gray driveway, blue pool water, restrained saturation
-Materials/textures: painted concrete, trimmed lawn edges, subtle wood and roof texture, light brush-grain ground texture
+Materials/textures: simple concrete shapes, trimmed lawn edges, simplified wood and roof detail, very light surface texture only
 Quality: high
 Constraints: no mower, no characters, no text, no logo, no watermark, preserve clear open lawn read, keep pool and walk paths visibly non-grass
-Avoid: isometric angle, dramatic perspective, heavy clutter, dense decorative props, photorealism, HUD elements, lettering
+Avoid: painterly texture, isometric angle, dramatic perspective, heavy clutter, dense decorative props, photorealism, HUD elements, lettering
 
 Layout notes from the current gameplay guide:
 - House block spans the upper center.

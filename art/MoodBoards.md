@@ -2,8 +2,12 @@
 
 Use these as “search terms + composition notes” for gathering image references and for AI generation prompts.
 
+Current direction: `Flat Indie` by default.
+- Favor flat color blocking, gentle cel shading, and light outline accents.
+- Avoid painterly texture and overly atmospheric lighting unless a prompt explicitly calls for a boundary test.
+
 ## Global board: Cozy lawn-care empire
-**Keywords:** cozy sim, suburban charm, small business hustle, warm mornings, clean stripes, satisfying lines, tidy tool trailer
+**Keywords:** cozy sim, suburban charm, small business hustle, warm mornings, clean stripes, satisfying lines, tidy tool trailer, flat-color indie game art, readable props
 - Scenes: driveway prep, unloading mower, edging around beds, “job complete” yard reveal
 - Props: flyer stacks, clipboard/tablet, fuel can, battery packs, ear protection, gloves
 - Composition: before/after splits, strong leading lines from mowing stripes, sun glints on dew
@@ -52,4 +56,3 @@ Use these as “search terms + composition notes” for gathering image referenc
 - Palette: #7FB069, #D6C39A, #E8A87C, #4A86A8, accent #F7C948
 - Props: gravel + turf combos, cacti planters, pool equipment, outdoor fans
 - Mood: speed + efficiency; heat as a soft difficulty modifier
-

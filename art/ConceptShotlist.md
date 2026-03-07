@@ -1,5 +1,7 @@
 # MoGrassMoMoney — Concept Art Shot List
 
+Render target for all shots unless otherwise noted: top-down or near-top-down `Flat Indie` 2D art with clean color blocking, light cel shading, and gameplay-first readability.
+
 ## Gameplay clarity concepts
 4) **Obstacle language sheet**: sprinklers, toys, flower beds, rocks, hoses, water feature edges (with “avoid/slow/bonus” notes).
 5) **Grass material sheet**: mowed/unmowed variations (stripe direction, wet vs dry, shade vs sun).
@@ -15,4 +17,3 @@
 11) Rockies bright yard + mountain backdrop
 12) New England manicured lawn + stone wall
 13) Sunbelt bright stucco + pool + xeriscape edges
-

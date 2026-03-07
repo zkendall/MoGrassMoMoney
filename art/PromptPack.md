@@ -3,15 +3,15 @@
 These are model-agnostic prompts designed to work with Midjourney, SDXL, DALL·E, etc. Replace `[brackets]` with your details.
 
 ## Global style tokens (pick one line)
-- **Stylized 3D cozy:** “stylized 3D, soft PBR, gentle global illumination, rounded shapes, clean silhouettes, cozy simulation game art, high readability”
-- **Cozy-toy:** “toy-like stylized 3D, flat-ish shading, bold color blocking, soft shadows, playful props, cozy game art”
-- **More grounded:** “semi-realistic 3D, realistic materials, cinematic lighting, subtle stylization, clean composition”
+- **Flat indie (default):** “top-down 2D flat-color indie game art, gentle cel shading, crisp silhouettes, light outline accents, simplified props, cozy readable environment art”
+- **Bold cartoon:** “top-down 2D cartoon game art, thicker outlines, stronger color blocking, playful props, clean readable shapes, cozy but punchy”
+- **Retro-lite:** “top-down 2D limited-palette game art, simplified forms, crisp color separation, restrained shading, classic indie readability”
 
 ## 1) Key art: stripe reveal
-“A lawn mower carving perfect mowing stripes in a suburban front yard at golden hour, satisfying clean lines, warm sun rays, dew sparkle, friendly cozy atmosphere, [STYLE TOKENS], composition with strong leading lines, no text, no watermark”
+“A lawn mower carving perfect mowing stripes in a suburban front yard, satisfying clean lines, friendly cozy atmosphere, [STYLE TOKENS], composition with strong leading lines, no text, no watermark”
 
 ## 2) Equipment lineup (upgrade ladder)
-“Product lineup render on a clean neutral background: manual push mower, gas push mower, self-propelled mower, riding mower with trailer, tiered progression, color-coded decals by tier, [STYLE TOKENS], studio lighting, 3/4 view, no text”
+“Product lineup render on a clean neutral background: manual push mower, gas push mower, self-propelled mower, riding mower with trailer, tiered progression, color-coded decals by tier, [STYLE TOKENS], clean presentation, 3/4 view, no text”
 
 ## 3) Regional establishing shot
 “A freshly mowed lawn in [REGION], clear mowing stripe pattern, local architecture and plants, seasonal atmosphere, [STYLE TOKENS], wide shot, high readability, no text”
@@ -30,4 +30,3 @@ REGION quick swaps:
 
 ## Negative prompt suggestions (where supported)
 “photorealistic faces, messy clutter, illegible UI text, watermark, logo, brand names, low contrast, oversharpened, noisy texture”
-

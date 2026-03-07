@@ -1,6 +1,25 @@
 (() => {
   function createMowingLawnMaps() {
     return {
+      empty_field: {
+        id: 'empty_field',
+        label: 'Empty Field',
+        art: {
+          enabled: true,
+          baseSrc: 'assets/maps/empty-field/base.png',
+          mowMaskSrc: 'assets/maps/empty-field/mow-mask.png',
+          collisionMaskSrc: 'assets/maps/empty-field/collision-mask.png',
+          promptSpecSrc: 'assets/maps/empty-field/base-imagegen-prompt.md',
+        },
+        scene: {
+          lawn: { x: 60, y: 40, w: 840, h: 560 },
+          house: { x: 0, y: 0, w: 0, h: 0 },
+          driveway: { x: 0, y: 0, w: 0, h: 0 },
+          spawn: { x: 480, y: 320 },
+          targetCoverage: 95,
+        },
+        obstacles: [],
+      },
       small: {
         id: 'small',
         label: 'Small Lawn',

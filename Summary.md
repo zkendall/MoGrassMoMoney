@@ -7,7 +7,7 @@ This is a lawn mowing empire building simulation game. There are two primary act
 
 The player's goal is to make money, "number go up".
 
-The game should balance cozy aesthetic and ambition (like Stardew Valley), with a top-down 2D visual style and somewhat muted, indie-leaning color tones.
+The game should balance cozy aesthetic and ambition (like Stardew Valley), with a top-down 2D flat-indie visual style: clean color blocking, light cel shading, slightly cartoonish props, and somewhat muted indie-leaning color tones.
 
 ## Mini-Game Lens
 Treat each major day action as a potential mini-game lane, but only ship lanes that feel fun and distinct.

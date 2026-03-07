@@ -11,7 +11,7 @@ This POC should prove:
 ## Scope (In)
 - Required setup menu before gameplay.
 - Three mower types: `manual`, `small_gas`, `large_rider`.
-- Three distinct lawn maps: `small`, `medium`, `large`.
+- Four lawn maps: `empty_field`, `small`, `medium`, `large`.
 - Route drawing + review (`Accept` / `Retry`) + playback loop.
 - Basic collision with static obstacles.
 - Lawn state change from unmowed to mowed.
@@ -60,7 +60,8 @@ Player selects mower + lawn in a setup menu, then plans a mowing route by drawin
 - Route playback is clamped to lawn bounds; leaving bounds does not apply boundary crash penalty.
 
 ## Lawn Maps
-Provide three distinct maps with unique geometry and obstacle arrangements:
+Provide four maps with distinct purposes:
+- `empty_field`: open test sandbox with no obstacles or non-mowable scene features.
 - `small`: circular lawn island inside a larger yard, with pool + cement walk paths marked as non-mowable zones.
 - `medium`: baseline suburban lot.
 - `large`: wider estate-style layout with more obstacle routing variance.
@@ -70,12 +71,12 @@ Each map contains:
 - House block (non-mowable)
 - Driveway block (non-mowable)
 - Optional non-mowable yard features (for example pool/walk paths)
-- 4-6 static obstacles
+  - 0-6 static obstacles depending on map purpose
 
 Non-mowable yard features are not crash obstacles; only static obstacles apply crash penalties.
 
 Current prototype note:
-- `small`, `medium`, and `large` now run through the same art-backed map pipeline:
+- `empty_field`, `small`, `medium`, and `large` now run through the same art-backed map pipeline:
   - authored background art at `assets/maps/<map-id>/base.png`
   - mowability seeded from `assets/maps/<map-id>/mow-mask.png`
   - `collision-mask.png` kept alongside each map's assets for future collision authority
