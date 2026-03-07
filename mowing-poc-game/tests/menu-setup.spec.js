@@ -11,6 +11,16 @@ test('initial mode is menu and start is disabled until setup complete', async ({
   expect(state.mode).toBe('menu');
   expect(state.setup.menu_active).toBe(true);
   expect(state.setup.start_enabled).toBe(false);
+  expect(Object.keys(state)).toEqual(expect.arrayContaining([
+    'setup',
+    'planning',
+    'review',
+    'playback',
+    'economy',
+    'mower',
+    'map',
+    'input',
+  ]));
 
   await driver.selectMower('manual');
   await driver.selectLawn('small');

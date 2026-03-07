@@ -13,6 +13,26 @@ python3 -m http.server 4173
 
 Open: `http://localhost:4173`
 
+## Code Structure
+
+- `game.js`: thin browser loader that imports `src/index.js`.
+- `src/index.js`: composition root for canvas boot, frame stepping, input wiring, render loop, and browser debug hooks.
+- Domain modules:
+  - `src/constants.js`, `src/state.js`, `src/assets.js`
+  - `src/lawn.js`, `src/mowGrid.js`, `src/pathing.js`
+  - `src/playback.js`, `src/economy.js`, `src/menu.js`, `src/audio.js`
+- Render modules:
+  - `src/render/scene.js`
+  - `src/render/mower.js`
+  - `src/render/overlays.js`
+  - `src/render/ui.js`
+- Input/debug modules:
+  - `src/input/pointer.js`
+  - `src/input/keyboard.js`
+  - `src/debug.js`
+
+The refactor keeps one shared runtime state object in `src/state.js`. Domain modules mutate only their relevant slices, while render modules stay read-only and `window.render_game_to_text()` / `window.advanceTime(ms)` remain available from `src/index.js`.
+
 ## Flow
 
 - Open setup menu (`mode=menu`)
