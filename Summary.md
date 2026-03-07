@@ -1,6 +1,6 @@
 # TODO
 - Fill in business loop more. What are the screens, etc.
-- 
+- Change mower sprites to have separate sprites for each rotation direction 
 
 # Summary
 This is a lawn mowing empire building simulation game. There are two primary activities: Mowing lawns and building the business.
