@@ -76,14 +76,14 @@ Non-mowable yard features are not crash obstacles; only static obstacles apply c
 
 Current prototype note:
 - `small`, `medium`, and `large` now run through the same art-backed map pipeline:
-  - baked placeholder background art at `assets/maps/<map-id>/base.png`
+  - authored background art at `assets/maps/<map-id>/base.png`
   - mowability seeded from `assets/maps/<map-id>/mow-mask.png`
-  - generated `guide.png` + `collision-mask.png` kept alongside each map's assets
+  - `collision-mask.png` kept alongside each map's assets for future collision authority
   - crash penalties still use obstacle geometry in v1
 
 ## Technical Prototype Notes
 - Coverage tracked by mow grid cells.
-- Placeholder art assets for all maps can be regenerated from current geometry with `python3 scripts/generate_map_assets.py`.
+- Use the `imagegen` skill to generate or revise map background art and grass textures.
 - Deterministic hooks exposed:
   - `window.render_game_to_text()`
   - `window.advanceTime(ms)`

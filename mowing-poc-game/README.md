@@ -42,8 +42,7 @@ All three lawn maps now support the same art-backed asset layout:
 - `assets/maps/<map-id>/base.png`: current baked background art for the map.
 - `assets/maps/<map-id>/mow-mask.png`: binary mowability mask used to seed the mow grid.
 - `assets/maps/<map-id>/collision-mask.png`: generated collision mask reserved for a later phase.
-- `assets/maps/<map-id>/guide.png`: geometry guide used to align art to gameplay truth.
-- `assets/maps/<map-id>/base-imagegen-prompt.md`: prompt spec for replacing the temporary local base art with an `imagegen` run.
+- `assets/maps/<map-id>/base-imagegen-prompt.md`: prompt spec for generating or revising the base art with the `imagegen` skill.
 
 Current behavior:
 
@@ -52,16 +51,26 @@ Current behavior:
 - All three maps still use obstacle geometry for crash penalties in v1.
 - If a map art asset fails to load, that map falls back to the existing geometric mowability/rendering path.
 
-Regenerate the deterministic placeholder assets for all maps from the current gameplay geometry:
+Authoring note:
 
-```bash
-cd mowing-poc-game
-python3 scripts/generate_map_assets.py
-```
+- Use the `imagegen` skill to generate or revise `assets/maps/<map-id>/base.png`.
+- Keep `mow-mask.png` and `collision-mask.png` aligned with gameplay truth; they are authoritative runtime assets, not inferred from `base.png`.
+- When map art changes materially, update the prompt spec in `assets/maps/<map-id>/base-imagegen-prompt.md` to match.
 
-`scripts/generate_small_map_assets.py` remains as a compatibility wrapper if you only want to rebuild `small`.
+## Grass Asset Pipeline
 
-The generated `base.png` files are currently local placeholders so the art-backed path is playable without API access. Once `OPENAI_API_KEY` is available, use each map's prompt spec with the `imagegen` skill to replace the placeholders with authored AI-generated backgrounds.
+Mowed-striping now uses three authored grass tiles:
+
+- `assets/grass-unmowed.png`: taller random-blade grass texture before a pass, with no baked stripe pattern.
+- `assets/grass-mowed-light.png`: lighter post-cut random-blade tile used for one lay-direction extreme.
+- `assets/grass-mowed-dark.png`: darker post-cut random-blade tile used for the opposite lay-direction extreme.
+
+The mower now stores a per-cell lay value and blends it toward the current mower heading each time the deck passes over that cell. Upward travel pushes the grass lighter, downward travel pushes it darker, and repeated curved or overlapping passes move the tone gradually instead of flipping between two binary states.
+
+Grass authoring note:
+
+- Use the `imagegen` skill to generate `assets/grass-unmowed.png`, `assets/grass-mowed-light.png`, and `assets/grass-mowed-dark.png`.
+- Source generations can be kept in `output/imagegen/`, but the runtime only depends on the final files under `assets/`.
 
 ## Controls
 
@@ -87,5 +96,6 @@ Reach 95% mow coverage at the end of an accepted route animation.
 - Crash penalties trigger only when the route centerline overlaps static obstacles; each entry applies `-$1` and a flip animation.
 - Small-map pool and walk-path yard zones are non-mowable but do not apply crash penalties.
 - All lawn mowing cells are sourced from `assets/maps/<map-id>/mow-mask.png`; collisions still come from obstacle geometry.
+- Mowed cells now store a continuous lay value and crossfade between `grass-mowed-light.png` and `grass-mowed-dark.png`, so overlapping or curved passes shift tone gradually.
 - Fuel depletion pauses animation in place; refilling resumes the same route progress.
 - Session-only setup memory: pressing `R` returns to menu with previous selection preselected in the current tab.

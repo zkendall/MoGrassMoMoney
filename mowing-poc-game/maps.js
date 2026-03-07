@@ -9,7 +9,6 @@
           baseSrc: 'assets/maps/small/base.png',
           mowMaskSrc: 'assets/maps/small/mow-mask.png',
           collisionMaskSrc: 'assets/maps/small/collision-mask.png',
-          guideSrc: 'assets/maps/small/guide.png',
           promptSpecSrc: 'assets/maps/small/base-imagegen-prompt.md',
         },
         scene: {
@@ -48,7 +47,6 @@
           baseSrc: 'assets/maps/medium/base.png',
           mowMaskSrc: 'assets/maps/medium/mow-mask.png',
           collisionMaskSrc: 'assets/maps/medium/collision-mask.png',
-          guideSrc: 'assets/maps/medium/guide.png',
           promptSpecSrc: 'assets/maps/medium/base-imagegen-prompt.md',
         },
         scene: {
@@ -73,7 +71,6 @@
           baseSrc: 'assets/maps/large/base.png',
           mowMaskSrc: 'assets/maps/large/mow-mask.png',
           collisionMaskSrc: 'assets/maps/large/collision-mask.png',
-          guideSrc: 'assets/maps/large/guide.png',
           promptSpecSrc: 'assets/maps/large/base-imagegen-prompt.md',
         },
         scene: {

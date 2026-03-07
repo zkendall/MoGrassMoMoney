@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npm run test:all",
     "test:quick": "npx playwright test tests/path-flow.spec.js tests/crash-economy.spec.js --config=playwright.config.js",
-    "test:visual": "npx playwright test tests/visual-overlay.spec.js --config=playwright.config.js",
+    "test:visual": "npx playwright test tests/visual-overlay.spec.js tests/visual-stripes.spec.js --config=playwright.config.js",
     "test:all": "npx playwright test --config=playwright.config.js",
     "test:headed": "npx playwright test --config=playwright.config.js --headed"
   },

@@ -23,18 +23,26 @@
 
   const grassSprites = {
     unmowed: new Image(),
-    mowed: new Image(),
+    mowedLight: new Image(),
+    mowedDark: new Image(),
     unmowedLoaded: false,
-    mowedLoaded: false,
+    mowedLightLoaded: false,
+    mowedDarkLoaded: false,
   };
   grassSprites.unmowed.src = 'assets/grass-unmowed.png';
-  grassSprites.mowed.src = 'assets/grass-mowed.png';
+  grassSprites.mowedLight.src = 'assets/grass-mowed-light.png';
+  grassSprites.mowedDark.src = 'assets/grass-mowed-dark.png';
   grassSprites.unmowed.onload = () => {
     grassSprites.unmowedLoaded = true;
   };
-  grassSprites.mowed.onload = () => {
-    grassSprites.mowedLoaded = true;
+  grassSprites.mowedLight.onload = () => {
+    grassSprites.mowedLightLoaded = true;
   };
+  grassSprites.mowedDark.onload = () => {
+    grassSprites.mowedDarkLoaded = true;
+  };
+  const MOWED_BRIGHTNESS_RANGE = 0.36;
+  const REFILL_GALLON_EPSILON = 0.005;
 
   const FUEL_PRICE_PER_GALLON = 3;
   const MOWER_TYPES = {
@@ -116,10 +124,12 @@
   };
 
   const mowGrid = {
-    cell: 18,
-    cols: Math.floor(WORLD.width / 18),
-    rows: Math.floor(WORLD.height / 18),
+    cell: 9,
+    cols: Math.floor(WORLD.width / 9),
+    rows: Math.floor(WORLD.height / 9),
     states: [],
+    layValues: [],
+    layBlendStrength: 0.08,
     mowableCount: 0,
     mowedCount: 0,
   };
@@ -490,6 +500,7 @@
 
   function initMowGrid() {
     mowGrid.states = new Array(mowGrid.cols * mowGrid.rows).fill(0);
+    mowGrid.layValues = new Array(mowGrid.cols * mowGrid.rows).fill(0);
     mowGrid.mowableCount = 0;
     mowGrid.mowedCount = 0;
 
@@ -511,6 +522,18 @@
     state.coverage = mowGrid.mowableCount === 0
       ? 0
       : (mowGrid.mowedCount / mowGrid.mowableCount) * 100;
+  }
+
+  function getLayTargetForHeading(heading) {
+    return clamp(-Math.sin(heading), -1, 1);
+  }
+
+  function blendLayValue(current, target) {
+    return clamp(
+      current + (target - current) * mowGrid.layBlendStrength,
+      -1,
+      1
+    );
   }
 
   function mowUnderDeck() {
@@ -535,6 +558,15 @@
         }
 
         const idx = row * mowGrid.cols + col;
+        if (mowGrid.states[idx] === 0) {
+          continue;
+        }
+
+        mowGrid.layValues[idx] = blendLayValue(
+          mowGrid.layValues[idx],
+          getLayTargetForHeading(mower.heading)
+        );
+
         if (mowGrid.states[idx] === 1) {
           mowGrid.states[idx] = 2;
           mowGrid.mowedCount += 1;
@@ -556,6 +588,15 @@
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+  }
+
+  function getCompressedBrightnessBlend(layValue) {
+    const normalized = (clamp(layValue, -1, 1) + 1) * 0.5;
+    return clamp(
+      0.5 + (normalized - 0.5) * MOWED_BRIGHTNESS_RANGE,
+      0,
+      1
+    );
   }
 
   function normalizeAngle(rad) {
@@ -800,7 +841,8 @@
 
   function getRefillGallonsNeeded() {
     if (!mowerUsesFuel()) return 0;
-    return Math.max(0, mower.fuelCapacity - mower.fuel);
+    const gallonsNeeded = Math.max(0, mower.fuelCapacity - mower.fuel);
+    return gallonsNeeded <= REFILL_GALLON_EPSILON ? 0 : gallonsNeeded;
   }
 
   function getRefillCost() {
@@ -1107,6 +1149,7 @@
       for (let col = 0; col < mowGrid.cols; col += 1) {
         const idx = row * mowGrid.cols + col;
         const cell = mowGrid.states[idx];
+        const layValue = clamp(mowGrid.layValues[idx] || 0, -1, 1);
         if (cell === 0) {
           continue;
         }
@@ -1114,14 +1157,38 @@
         const x = col * mowGrid.cell;
         const y = row * mowGrid.cell;
         if (cell === 1 && grassSprites.unmowedLoaded) {
+          ctx.fillStyle = '#6aa65e';
+          ctx.fillRect(x, y, mowGrid.cell, mowGrid.cell);
           ctx.drawImage(grassSprites.unmowed, 0, 0, 128, 128, x, y, mowGrid.cell, mowGrid.cell);
-        } else if (cell === 2 && grassSprites.mowedLoaded) {
-          ctx.drawImage(grassSprites.mowed, 0, 0, 128, 128, x, y, mowGrid.cell, mowGrid.cell);
+        } else if (cell === 2 && grassSprites.mowedLightLoaded && grassSprites.mowedDarkLoaded) {
+          const lightAlpha = getCompressedBrightnessBlend(layValue);
+          const darkAlpha = 1 - lightAlpha;
+          const channel = Math.round(84 + lightAlpha * 12);
+          const green = Math.round(137 + lightAlpha * 16);
+          const blue = Math.round(80 + lightAlpha * 12);
+          ctx.fillStyle = `rgb(${channel}, ${green}, ${blue})`;
+          ctx.fillRect(x, y, mowGrid.cell, mowGrid.cell);
+          if (darkAlpha > 0.001) {
+            ctx.save();
+            ctx.globalAlpha = darkAlpha;
+            ctx.drawImage(grassSprites.mowedDark, 0, 0, 128, 128, x, y, mowGrid.cell, mowGrid.cell);
+            ctx.restore();
+          }
+          if (lightAlpha > 0.001) {
+            ctx.save();
+            ctx.globalAlpha = lightAlpha;
+            ctx.drawImage(grassSprites.mowedLight, 0, 0, 128, 128, x, y, mowGrid.cell, mowGrid.cell);
+            ctx.restore();
+          }
         } else if (cell === 1) {
           ctx.fillStyle = ((row + col) % 2 === 0) ? '#6aa65e' : '#72ad65';
           ctx.fillRect(x, y, mowGrid.cell, mowGrid.cell);
         } else {
-          ctx.fillStyle = ((row + col) % 2 === 0) ? '#4f8c4a' : '#588f50';
+          const tint = getCompressedBrightnessBlend(layValue);
+          const channel = Math.round(84 + tint * 12);
+          const green = Math.round(137 + tint * 16);
+          const blue = Math.round(80 + tint * 12);
+          ctx.fillStyle = `rgb(${channel}, ${green}, ${blue})`;
           ctx.fillRect(x, y, mowGrid.cell, mowGrid.cell);
         }
       }
@@ -1992,7 +2059,6 @@
       background_source: isActiveMap && hasActiveBaseArt() ? 'art' : 'procedural',
       mow_source: isActiveMap ? getActiveMowSource() : 'geometry',
       collision_source: isActiveMap ? getActiveCollisionSource() : 'obstacles',
-      guide_src: artConfig?.guideSrc || null,
       prompt_spec_src: artConfig?.promptSpecSrc || null,
       base: {
         src: artConfig?.baseSrc || null,
@@ -2121,6 +2187,12 @@
         path_length_px: Number(pathState.draftLength.toFixed(2)),
         brush_radius_px: pathState.brushRadius,
         has_review_path: state.mode === 'review' && pathState.draftPoints.length > 1,
+      },
+      mowing_visuals: {
+        stripe_selection: 'heading_blend',
+        lay_blend_strength: mowGrid.layBlendStrength,
+        unmowed_asset: 'assets/grass-unmowed.png',
+        mowed_assets: ['assets/grass-mowed-light.png', 'assets/grass-mowed-dark.png'],
       },
       review: {
         mode_active: state.mode === 'review',
