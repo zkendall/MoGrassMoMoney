@@ -7,7 +7,6 @@ export function createMowGridApi(game, { isPointMowable, clamp }) {
 
   function initMowGrid() {
     game.mowGrid.states = new Array(game.mowGrid.cols * game.mowGrid.rows).fill(0);
-    game.mowGrid.layValues = new Array(game.mowGrid.cols * game.mowGrid.rows).fill(0);
     game.mowGrid.mowableCount = 0;
     game.mowGrid.mowedCount = 0;
 
@@ -23,18 +22,6 @@ export function createMowGridApi(game, { isPointMowable, clamp }) {
       }
     }
     updateCoverage();
-  }
-
-  function getLayTargetForHeading(heading) {
-    return clamp(-Math.sin(heading), -1, 1);
-  }
-
-  function blendLayValue(current, target) {
-    return clamp(
-      current + (target - current) * game.mowGrid.layBlendStrength,
-      -1,
-      1
-    );
   }
 
   function mowUnderDeck() {
@@ -69,11 +56,6 @@ export function createMowGridApi(game, { isPointMowable, clamp }) {
           continue;
         }
 
-        game.mowGrid.layValues[idx] = blendLayValue(
-          game.mowGrid.layValues[idx],
-          getLayTargetForHeading(game.mower.heading)
-        );
-
         if (game.mowGrid.states[idx] === 1) {
           game.mowGrid.states[idx] = 2;
           game.mowGrid.mowedCount += 1;
@@ -90,8 +72,6 @@ export function createMowGridApi(game, { isPointMowable, clamp }) {
   return {
     initMowGrid,
     updateCoverage,
-    getLayTargetForHeading,
-    blendLayValue,
     mowUnderDeck,
   };
 }

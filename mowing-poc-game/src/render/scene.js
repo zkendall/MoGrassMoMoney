@@ -1,4 +1,4 @@
-import { getCompressedBrightnessBlend, clamp } from '../pathing.js';
+import { GRASS_TILE_CONFIG } from '../constants.js';
 
 export function createSceneRenderer(game, deps) {
   const {
@@ -6,56 +6,78 @@ export function createSceneRenderer(game, deps) {
     hasActiveForegroundArt,
   } = deps;
 
+  function getCellState(row, col) {
+    if (
+      row < 0
+      || col < 0
+      || row >= game.mowGrid.rows
+      || col >= game.mowGrid.cols
+    ) {
+      return 0;
+    }
+    return game.mowGrid.states[row * game.mowGrid.cols + col];
+  }
+
+  function getCellHeight(cell) {
+    if (cell === 1) {
+      return 1;
+    }
+    if (cell === 2) {
+      return 0;
+    }
+    return -1;
+  }
+
+  function getGrassFrameColumn(row, col, cell) {
+    const height = getCellHeight(cell);
+    const southLower = getCellHeight(getCellState(row + 1, col)) < height;
+    const eastLower = getCellHeight(getCellState(row, col + 1)) < height;
+    const southEastLower = getCellHeight(getCellState(row + 1, col + 1)) < height;
+
+    return (
+      (southLower ? 1 : 0)
+      + (eastLower ? 2 : 0)
+      + (southEastLower ? 4 : 0)
+    );
+  }
+
   function drawMowGrid() {
     const { ctx } = game;
     const grassSprites = game.assets.grassSprites;
+    const grassSheet = grassSprites.sheet;
+    const canUseSheet = grassSheet?.loaded && !grassSheet.error;
 
-    for (let row = 0; row < game.mowGrid.rows; row += 1) {
-      for (let col = 0; col < game.mowGrid.cols; col += 1) {
+    for (let row = game.mowGrid.rows - 1; row >= 0; row -= 1) {
+      for (let col = game.mowGrid.cols - 1; col >= 0; col -= 1) {
         const idx = row * game.mowGrid.cols + col;
         const cell = game.mowGrid.states[idx];
-        const layValue = clamp(game.mowGrid.layValues[idx] || 0, -1, 1);
         if (cell === 0) {
           continue;
         }
 
         const x = col * game.mowGrid.cell;
         const y = row * game.mowGrid.cell;
-        if (cell === 1 && grassSprites.unmowedLoaded) {
-          ctx.fillStyle = '#6aa65e';
-          ctx.fillRect(x, y, game.mowGrid.cell, game.mowGrid.cell);
-          ctx.drawImage(grassSprites.unmowed, 0, 0, 128, 128, x, y, game.mowGrid.cell, game.mowGrid.cell);
-        } else if (cell === 2 && grassSprites.mowedLightLoaded && grassSprites.mowedDarkLoaded) {
-          const lightAlpha = getCompressedBrightnessBlend(layValue);
-          const darkAlpha = 1 - lightAlpha;
-          const channel = Math.round(84 + lightAlpha * 12);
-          const green = Math.round(137 + lightAlpha * 16);
-          const blue = Math.round(80 + lightAlpha * 12);
-          ctx.fillStyle = `rgb(${channel}, ${green}, ${blue})`;
-          ctx.fillRect(x, y, game.mowGrid.cell, game.mowGrid.cell);
-          if (darkAlpha > 0.001) {
-            ctx.save();
-            ctx.globalAlpha = darkAlpha;
-            ctx.drawImage(grassSprites.mowedDark, 0, 0, 128, 128, x, y, game.mowGrid.cell, game.mowGrid.cell);
-            ctx.restore();
-          }
-          if (lightAlpha > 0.001) {
-            ctx.save();
-            ctx.globalAlpha = lightAlpha;
-            ctx.drawImage(grassSprites.mowedLight, 0, 0, 128, 128, x, y, game.mowGrid.cell, game.mowGrid.cell);
-            ctx.restore();
-          }
-        } else if (cell === 1) {
-          ctx.fillStyle = ((row + col) % 2 === 0) ? '#6aa65e' : '#72ad65';
-          ctx.fillRect(x, y, game.mowGrid.cell, game.mowGrid.cell);
-        } else {
-          const tint = getCompressedBrightnessBlend(layValue);
-          const channel = Math.round(84 + tint * 12);
-          const green = Math.round(137 + tint * 16);
-          const blue = Math.round(80 + tint * 12);
-          ctx.fillStyle = `rgb(${channel}, ${green}, ${blue})`;
-          ctx.fillRect(x, y, game.mowGrid.cell, game.mowGrid.cell);
+        if (canUseSheet) {
+          const frameColumn = getGrassFrameColumn(row, col, cell);
+          const frameRow = cell === 1 ? 0 : 1;
+          ctx.drawImage(
+            grassSheet.image,
+            frameColumn * GRASS_TILE_CONFIG.frameWidth,
+            frameRow * GRASS_TILE_CONFIG.frameHeight,
+            GRASS_TILE_CONFIG.frameWidth,
+            GRASS_TILE_CONFIG.frameHeight,
+            x,
+            y,
+            GRASS_TILE_CONFIG.frameWidth,
+            GRASS_TILE_CONFIG.frameHeight
+          );
+          continue;
         }
+
+        ctx.fillStyle = cell === 1
+          ? (((row + col) % 2 === 0) ? '#6aa65e' : '#72ad65')
+          : '#6a8f57';
+        ctx.fillRect(x, y, game.mowGrid.cell, game.mowGrid.cell);
       }
     }
   }
@@ -243,4 +265,3 @@ export function createSceneRenderer(game, deps) {
     drawForegroundArt,
   };
 }
-

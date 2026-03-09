@@ -1,4 +1,3 @@
-export const MOWED_BRIGHTNESS_RANGE = 0.36;
 export const REFILL_GALLON_EPSILON = 0.005;
 export const FUEL_PRICE_PER_GALLON = 3;
 export const FIXED_STEP = 1 / 60;
@@ -12,9 +11,16 @@ export const MOWER_SPRITE_ASSET_SOURCES = {
 };
 
 export const GRASS_SPRITE_SOURCES = {
-  unmowed: 'assets/grass-unmowed.png',
-  mowedLight: 'assets/grass-mowed-light.png',
-  mowedDark: 'assets/grass-mowed-dark.png',
+  sheet: 'assets/grass-autotile-sheet.png',
+};
+
+export const GRASS_TILE_CONFIG = {
+  cellSize: 16,
+  frameWidth: 16,
+  frameHeight: 20,
+  overlapPx: 4,
+  columns: 8,
+  rows: 2,
 };
 
 export const MOWER_TYPES = {
@@ -70,4 +76,3 @@ export const MENU_LAYOUT = {
   startButton: { id: 'start_job', label: 'Start Job', x: 270, y: 500, w: 220, h: 50 },
   resetButton: { id: 'reset_defaults', label: 'Reset Defaults', x: 510, y: 500, w: 220, h: 50 },
 };
-

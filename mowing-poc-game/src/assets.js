@@ -52,30 +52,9 @@ export function createMowerSpriteAssets() {
 }
 
 export function createGrassSprites() {
-  const sprites = {
-    unmowed: new Image(),
-    mowedLight: new Image(),
-    mowedDark: new Image(),
-    unmowedLoaded: false,
-    mowedLightLoaded: false,
-    mowedDarkLoaded: false,
+  return {
+    sheet: createImageAsset(GRASS_SPRITE_SOURCES.sheet),
   };
-
-  sprites.unmowed.src = GRASS_SPRITE_SOURCES.unmowed;
-  sprites.mowedLight.src = GRASS_SPRITE_SOURCES.mowedLight;
-  sprites.mowedDark.src = GRASS_SPRITE_SOURCES.mowedDark;
-
-  sprites.unmowed.onload = () => {
-    sprites.unmowedLoaded = true;
-  };
-  sprites.mowedLight.onload = () => {
-    sprites.mowedLightLoaded = true;
-  };
-  sprites.mowedDark.onload = () => {
-    sprites.mowedDarkLoaded = true;
-  };
-
-  return sprites;
 }
 
 export function createMapArtRegistry(lawnMaps) {
@@ -97,4 +76,3 @@ export function createMapArtRegistry(lawnMaps) {
 
   return registry;
 }
-

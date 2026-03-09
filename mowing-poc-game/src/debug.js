@@ -116,10 +116,14 @@ export function createDebugApi(game, deps) {
         has_review_path: game.ui.mode === 'review' && game.route.draftPoints.length > 1,
       },
       mowing_visuals: {
-        stripe_selection: 'heading_blend',
-        lay_blend_strength: game.mowGrid.layBlendStrength,
-        unmowed_asset: 'assets/grass-unmowed.png',
-        mowed_assets: ['assets/grass-mowed-light.png', 'assets/grass-mowed-dark.png'],
+        tile_size_px: game.mowGrid.cell,
+        asset: 'assets/grass-autotile-sheet.png',
+        frame_width_px: 16,
+        frame_height_px: 20,
+        overlap_px: 4,
+        autotile_rows: ['unmowed', 'mowed'],
+        autotile_columns: 8,
+        autotile_mask_bits: ['south_lower', 'east_lower', 'southeast_lower'],
       },
       review: {
         mode_active: game.ui.mode === 'review',
@@ -197,4 +201,3 @@ export function createDebugApi(game, deps) {
     renderGameToText,
   };
 }
-

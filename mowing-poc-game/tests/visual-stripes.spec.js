@@ -27,7 +27,7 @@ async function advanceUntil(driver, predicate, { maxSteps = 260, stepMs = 60 } =
   return driver.readState();
 }
 
-test('mowed lanes blend toward pass direction over repeated playback', async ({ page }) => {
+test('mowing visibly changes autotiled grass lanes', async ({ page }) => {
   const driver = createGameDriver(page);
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -36,12 +36,11 @@ test('mowed lanes blend toward pass direction over repeated playback', async ({ 
 
   let state = await driver.readState();
   expect(state.mode).toBe('start');
-  expect(state.mowing_visuals.stripe_selection).toBe('heading_blend');
-  expect(state.mowing_visuals.mowed_assets).toEqual([
-    'assets/grass-mowed-light.png',
-    'assets/grass-mowed-dark.png',
-  ]);
-  expect(state.mowing_visuals.lay_blend_strength).toBeGreaterThan(0);
+  expect(state.mowing_visuals.asset).toBe('assets/grass-autotile-sheet.png');
+  expect(state.mowing_visuals.tile_size_px).toBe(16);
+  expect(state.mowing_visuals.frame_width_px).toBe(16);
+  expect(state.mowing_visuals.frame_height_px).toBe(20);
+  expect(state.mowing_visuals.autotile_columns).toBe(8);
 
   const top = state.map.lawn.y + 54;
   const bottom = state.map.lawn.y + state.map.lawn.h - 54;
@@ -68,32 +67,7 @@ test('mowed lanes blend toward pass direction over repeated playback', async ({ 
   expect(['drawing', 'won']).toContain(state.mode);
   const afterDownward = await sampleAverageColor(driver, lanePoints);
 
-  await driver.drawPath([
-    { x: laneX, y: top },
-    { x: laneX, y: bottom },
-  ]);
-  await driver.clickReviewButton('Accept');
-  state = await advanceUntil(driver, (snapshot) => snapshot.mode !== 'animating', {
-    maxSteps: 260,
-    stepMs: 60,
-  });
-  const afterSecondDownward = await sampleAverageColor(driver, lanePoints);
-
-  await driver.drawPath([
-    { x: laneX, y: bottom },
-    { x: laneX, y: top },
-  ]);
-  await driver.clickReviewButton('Accept');
-  state = await advanceUntil(driver, (snapshot) => snapshot.mode !== 'animating', {
-    maxSteps: 260,
-    stepMs: 60,
-  });
-  const afterUpward = await sampleAverageColor(driver, lanePoints);
-
-  expect(colorDelta(afterDownward, baselineLane)).toBeGreaterThan(18);
-  expect(colorDelta(afterSecondDownward, afterDownward)).toBeGreaterThan(2);
-  expect(colorDelta(afterUpward, afterSecondDownward)).toBeGreaterThan(2);
-  expect(colorDelta(afterUpward, baselineLane)).toBeGreaterThan(12);
+  expect(colorDelta(afterDownward, baselineLane)).toBeGreaterThan(8);
 
   driver.expectNoConsoleErrors();
 });

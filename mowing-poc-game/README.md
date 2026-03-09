@@ -81,18 +81,25 @@ Authoring note:
 
 ## Grass Asset Pipeline
 
-Mowed-striping now uses three authored grass tiles:
+Grass now uses one authored autotile sheet:
 
-- `assets/grass-unmowed.png`: taller random-blade grass texture before a pass, with no baked stripe pattern.
-- `assets/grass-mowed-light.png`: lighter post-cut random-blade tile used for one lay-direction extreme.
-- `assets/grass-mowed-dark.png`: darker post-cut random-blade tile used for the opposite lay-direction extreme.
+- `assets/grass-autotile-sheet.png`: a single pixel-art sheet with `2` rows x `8` columns.
+- Row `0` is `unmowed`; row `1` is `mowed`.
+- Columns are selected by a 3-bit mask:
+  - bit `1`: south neighbor is lower
+  - bit `2`: east neighbor is lower
+  - bit `4`: southeast neighbor is lower
 
-The mower now stores a per-cell lay value and blends it toward the current mower heading each time the deck passes over that cell. Upward travel pushes the grass lighter, downward travel pushes it darker, and repeated curved or overlapping passes move the tone gradually instead of flipping between two binary states.
+Runtime notes:
+
+- Lawn cells now use a `16px` gameplay/render grid.
+- Each frame is `16x20`; the extra height is the visible skirt/side wall.
+- Grass is rendered in reverse row/column order so northern tiles can overlap southern/eastern neighbors cleanly.
 
 Grass authoring note:
 
-- Use the `imagegen` skill to generate `assets/grass-unmowed.png`, `assets/grass-mowed-light.png`, and `assets/grass-mowed-dark.png`.
-- Source generations can be kept in `output/imagegen/`, but the runtime only depends on the final files under `assets/`.
+- Use the `imagegen` skill to generate `assets/grass-autotile-sheet.png`.
+- Source generations can be kept in `output/imagegen/`, but the runtime only depends on the final file under `assets/`.
 
 ## Controls
 
@@ -118,6 +125,6 @@ Reach 95% mow coverage at the end of an accepted route animation.
 - Crash penalties trigger only when the route centerline overlaps static obstacles; each entry applies `-$1` and a flip animation.
 - Small-map pool and walk-path yard zones are non-mowable but do not apply crash penalties.
 - All lawn mowing cells are sourced from `assets/maps/<map-id>/mow-mask.png`; collisions still come from obstacle geometry.
-- Mowed cells now store a continuous lay value and crossfade between `grass-mowed-light.png` and `grass-mowed-dark.png`, so overlapping or curved passes shift tone gradually.
+- Mowed vs unmowed grass now resolves through a sprite-sheet autotile lookup based on south/east/southeast neighbor height.
 - Fuel depletion pauses animation in place; refilling resumes the same route progress.
 - Session-only setup memory: pressing `R` returns to menu with previous selection preselected in the current tab.

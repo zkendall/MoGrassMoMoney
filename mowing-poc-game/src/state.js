@@ -106,12 +106,10 @@ export function createInitialState({
       fastForward: false,
     },
     mowGrid: {
-      cell: 9,
-      cols: Math.floor(canvas.width / 9),
-      rows: Math.floor(canvas.height / 9),
+      cell: 16,
+      cols: Math.floor(canvas.width / 16),
+      rows: Math.floor(canvas.height / 16),
       states: [],
-      layValues: [],
-      layBlendStrength: 0.08,
       mowableCount: 0,
       mowedCount: 0,
     },
@@ -176,4 +174,3 @@ export function createInitialState({
     },
   };
 }
-

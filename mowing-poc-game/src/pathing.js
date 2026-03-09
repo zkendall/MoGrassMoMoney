@@ -1,5 +1,3 @@
-import { MOWED_BRIGHTNESS_RANGE } from './constants.js';
-
 export function dist(a, b) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -8,15 +6,6 @@ export function dist(a, b) {
 
 export function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
-}
-
-export function getCompressedBrightnessBlend(layValue) {
-  const normalized = (clamp(layValue, -1, 1) + 1) * 0.5;
-  return clamp(
-    0.5 + (normalized - 0.5) * MOWED_BRIGHTNESS_RANGE,
-    0,
-    1
-  );
 }
 
 export function normalizeAngle(rad) {
