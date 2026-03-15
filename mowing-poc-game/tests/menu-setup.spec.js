@@ -28,6 +28,7 @@ test('initial mode is menu and start is disabled until setup complete', async ({
   expect(state.setup.selected_mower_id).toBe('manual');
   expect(state.setup.selected_lawn_id).toBe('small');
   expect(state.setup.start_enabled).toBe(true);
+  expect(state.mower.deck_radius).toBe(16);
 });
 
 test('empty field map loads as an obstacle-free sandbox', async ({ page }) => {

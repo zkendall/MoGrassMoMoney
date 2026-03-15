@@ -28,7 +28,7 @@ export const MOWER_TYPES = {
     id: 'manual',
     label: 'Manual Push',
     playbackSpeed: 95,
-    deckRadius: 22,
+    deckRadius: 16,
     fuelCapacity: 0,
     fuelBurnPerPixel: 0,
     spriteAssetId: 'pushManual16',
