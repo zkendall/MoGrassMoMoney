@@ -3,7 +3,7 @@ export const FUEL_PRICE_PER_GALLON = 3;
 export const FIXED_STEP = 1 / 60;
 
 export const DEFAULT_MOWER_TYPE_ID = 'small_gas';
-export const DEFAULT_LAWN_MAP_ID = 'medium';
+export const DEFAULT_LAWN_MAP_ID = 'empty_field';
 
 export const MOWER_SPRITE_ASSET_SOURCES = {
   mowerSheet: 'assets/mower-sheet.png',
@@ -27,25 +27,25 @@ export const MOWER_TYPES = {
   manual: {
     id: 'manual',
     label: 'Manual Push',
-    playbackSpeed: 95,
+    playbackSpeed: 90,
     deckRadius: 16,
     fuelCapacity: 0,
     fuelBurnPerPixel: 0,
     spriteAssetId: 'pushManual16',
     spriteFrame: { x: 0, y: 0, w: 256, h: 256 },
     spriteDirectionalFrames: { frameW: 320, frameH: 320, columns: 4, count: 16 },
-    spriteDraw: { w: 62, h: 62 },
+    spriteDraw: { w: 64, h: 64 },
   },
   small_gas: {
     id: 'small_gas',
     label: 'Small Gas',
     playbackSpeed: 120,
-    deckRadius: 26,
+    deckRadius: 16,
     fuelCapacity: 0.5,
     fuelBurnPerPixel: 0.0002,
     spriteAssetId: 'mowerSheet',
     spriteFrame: { x: 256, y: 0, w: 256, h: 256 },
-    spriteDraw: { w: 54, h: 54 },
+    spriteDraw: { w: 64, h: 64 },
   },
   large_rider: {
     id: 'large_rider',

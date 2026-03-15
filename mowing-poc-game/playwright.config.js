@@ -29,7 +29,7 @@ module.exports = defineConfig({
   webServer: disableWebServer || !isLocalHost
     ? undefined
     : {
-      command: `python3 -m http.server ${port} --directory .`,
+      command: `python3 scripts/dev_server.py ${port} --directory .`,
       url: baseURL,
       cwd: __dirname,
       reuseExistingServer: !process.env.CI,

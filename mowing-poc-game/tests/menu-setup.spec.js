@@ -28,6 +28,10 @@ test('initial mode is menu and start is disabled until setup complete', async ({
   expect(state.setup.selected_mower_id).toBe('manual');
   expect(state.setup.selected_lawn_id).toBe('small');
   expect(state.setup.start_enabled).toBe(true);
+
+  await driver.clickStartJob();
+  state = await driver.readState();
+  expect(state.mower.type_id).toBe('manual');
   expect(state.mower.deck_radius).toBe(16);
 });
 
@@ -64,7 +68,20 @@ test('menu selection applies mower/map config and start enters start mode', asyn
   expect(state.map.id).toBe('large');
   expect(state.mower.type_id).toBe('large_rider');
   expect(state.mower.fuel_capacity).toBeCloseTo(1.5, 3);
-  expect(state.mower.deck_radius).toBeGreaterThan(26);
+  expect(state.mower.deck_radius).toBeGreaterThan(20);
+});
+
+test('small gas mower uses the tightened cut width', async ({ page }) => {
+  const driver = createGameDriver(page);
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await driver.waitForRenderApi();
+
+  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'medium' });
+
+  const state = await driver.readState();
+  expect(state.mower.type_id).toBe('small_gas');
+  expect(state.mower.deck_radius).toBe(16);
 });
 
 test('R returns to menu and preserves prior session setup selection', async ({ page }) => {

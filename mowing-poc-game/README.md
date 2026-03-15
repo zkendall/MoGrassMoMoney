@@ -8,10 +8,12 @@ From repo root:
 
 ```bash
 cd mowing-poc-game
-python3 -m http.server 4173
+npm run dev
 ```
 
 Open: `http://localhost:4173`
+
+The dev server sends `Cache-Control: no-store` and related no-cache headers so normal reloads fetch fresh JS, CSS, and asset files without relying on the DevTools "Disable cache" toggle.
 
 ## Code Structure
 

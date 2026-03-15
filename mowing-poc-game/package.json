@@ -4,6 +4,7 @@
   "description": "Simple single-scene top-down mowing prototype based on `POC-Mowing.md`.",
   "main": "game.js",
   "scripts": {
+    "dev": "python3 scripts/dev_server.py 4173 --directory .",
     "test": "npm run test:all",
     "test:quick": "npx playwright test tests/path-flow.spec.js tests/crash-economy.spec.js --config=playwright.config.js",
     "test:visual": "npx playwright test tests/visual-overlay.spec.js tests/visual-stripes.spec.js --config=playwright.config.js",

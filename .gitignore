@@ -11,3 +11,4 @@ node_modules/
 tycoon-poc-text/output/
 .DS_Store
 mowing-poc-game/output/
+*.pyc
