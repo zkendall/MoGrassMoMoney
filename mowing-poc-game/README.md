@@ -83,10 +83,10 @@ Authoring note:
 
 ## Grass Asset Pipeline
 
-Grass now uses one authored autotile sheet:
+Grass now uses two authored autotile strips:
 
-- `assets/grass-autotile-sheet.png`: a single pixel-art sheet with `2` rows x `8` columns.
-- Row `0` is `unmowed`; row `1` is `mowed`.
+- `assets/grass-unmowed.png`: a single-row pixel-art strip with `8` columns.
+- `assets/grass-mowed.png`: a single-row pixel-art strip with `8` columns.
 - Columns are selected by a 3-bit mask:
   - bit `1`: south neighbor is lower
   - bit `2`: east neighbor is lower
@@ -95,12 +95,12 @@ Grass now uses one authored autotile sheet:
 Runtime notes:
 
 - Lawn cells now use a `16px` gameplay/render grid.
-- Each frame is `16x20`; the extra height is the visible skirt/side wall.
-- Grass is rendered in reverse row/column order so northern tiles can overlap southern/eastern neighbors cleanly.
+- Each frame is `16x16`; there is no extra skirt/side-wall overlap.
+- Grass is still rendered in reverse row/column order so tile transitions stay stable.
 
 Grass authoring note:
 
-- Use the `imagegen` skill to generate `assets/grass-autotile-sheet.png`.
+- Use the `imagegen` skill to generate or revise `assets/grass-unmowed.png` and `assets/grass-mowed.png`.
 - Source generations can be kept in `output/imagegen/`, but the runtime only depends on the final file under `assets/`.
 
 ## Controls

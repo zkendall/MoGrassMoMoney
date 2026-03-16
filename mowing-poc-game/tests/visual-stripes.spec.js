@@ -36,10 +36,13 @@ test('mowing visibly changes autotiled grass lanes', async ({ page }) => {
 
   let state = await driver.readState();
   expect(state.mode).toBe('start');
-  expect(state.mowing_visuals.asset).toBe('assets/grass-autotile-sheet.png');
+  expect(state.mowing_visuals.assets).toEqual({
+    unmowed: 'assets/grass-unmowed.png',
+    mowed: 'assets/grass-mowed.png',
+  });
   expect(state.mowing_visuals.tile_size_px).toBe(16);
   expect(state.mowing_visuals.frame_width_px).toBe(16);
-  expect(state.mowing_visuals.frame_height_px).toBe(20);
+  expect(state.mowing_visuals.frame_height_px).toBe(16);
   expect(state.mowing_visuals.autotile_columns).toBe(8);
 
   const top = state.map.lawn.y + 54;

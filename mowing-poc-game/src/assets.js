@@ -53,7 +53,8 @@ export function createMowerSpriteAssets() {
 
 export function createGrassSprites() {
   return {
-    sheet: createImageAsset(GRASS_SPRITE_SOURCES.sheet),
+    unmowed: createImageAsset(GRASS_SPRITE_SOURCES.unmowed),
+    mowed: createImageAsset(GRASS_SPRITE_SOURCES.mowed),
   };
 }
 

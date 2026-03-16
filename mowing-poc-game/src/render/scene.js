@@ -41,11 +41,30 @@ export function createSceneRenderer(game, deps) {
     );
   }
 
+  function hashGrassCoordinates(row, col) {
+    let hash = (row + 1) * 374761393;
+    hash = (hash + ((col + 1) * 668265263)) >>> 0;
+    hash ^= hash >>> 13;
+    hash = Math.imul(hash, 1274126177) >>> 0;
+    hash ^= hash >>> 16;
+    return hash >>> 0;
+  }
+
+  function getGrassQuarterTurn(row, col) {
+    return hashGrassCoordinates(row, col) & 3;
+  }
+
   function drawMowGrid() {
     const { ctx } = game;
     const grassSprites = game.assets.grassSprites;
-    const grassSheet = grassSprites.sheet;
-    const canUseSheet = grassSheet?.loaded && !grassSheet.error;
+    const unmowedSheet = grassSprites.unmowed;
+    const mowedSheet = grassSprites.mowed;
+    const canUseSplitSheets = (
+      unmowedSheet?.loaded
+      && !unmowedSheet.error
+      && mowedSheet?.loaded
+      && !mowedSheet.error
+    );
 
     for (let row = game.mowGrid.rows - 1; row >= 0; row -= 1) {
       for (let col = game.mowGrid.cols - 1; col >= 0; col -= 1) {
@@ -57,13 +76,35 @@ export function createSceneRenderer(game, deps) {
 
         const x = col * game.mowGrid.cell;
         const y = row * game.mowGrid.cell;
-        if (canUseSheet) {
+        if (canUseSplitSheets) {
           const frameColumn = getGrassFrameColumn(row, col, cell);
-          const frameRow = cell === 1 ? 0 : 1;
+          const grassSheet = cell === 1 ? unmowedSheet : mowedSheet;
+          if (frameColumn === 0) {
+            const rotation = getGrassQuarterTurn(row, col) * (Math.PI * 0.5);
+            ctx.save();
+            ctx.translate(
+              x + (GRASS_TILE_CONFIG.frameWidth * 0.5),
+              y + (GRASS_TILE_CONFIG.frameHeight * 0.5)
+            );
+            ctx.rotate(rotation);
+            ctx.drawImage(
+              grassSheet.image,
+              0,
+              0,
+              GRASS_TILE_CONFIG.frameWidth,
+              GRASS_TILE_CONFIG.frameHeight,
+              -GRASS_TILE_CONFIG.frameWidth * 0.5,
+              -GRASS_TILE_CONFIG.frameHeight * 0.5,
+              GRASS_TILE_CONFIG.frameWidth,
+              GRASS_TILE_CONFIG.frameHeight
+            );
+            ctx.restore();
+            continue;
+          }
           ctx.drawImage(
             grassSheet.image,
             frameColumn * GRASS_TILE_CONFIG.frameWidth,
-            frameRow * GRASS_TILE_CONFIG.frameHeight,
+            0,
             GRASS_TILE_CONFIG.frameWidth,
             GRASS_TILE_CONFIG.frameHeight,
             x,

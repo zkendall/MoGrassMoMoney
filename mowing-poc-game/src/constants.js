@@ -11,16 +11,15 @@ export const MOWER_SPRITE_ASSET_SOURCES = {
 };
 
 export const GRASS_SPRITE_SOURCES = {
-  sheet: 'assets/grass-autotile-sheet.png',
+  unmowed: 'assets/grass-unmowed.png',
+  mowed: 'assets/grass-mowed.png',
 };
 
 export const GRASS_TILE_CONFIG = {
   cellSize: 16,
   frameWidth: 16,
-  frameHeight: 20,
-  overlapPx: 4,
+  frameHeight: 16,
   columns: 8,
-  rows: 2,
 };
 
 export const MOWER_TYPES = {

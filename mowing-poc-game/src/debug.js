@@ -117,13 +117,15 @@ export function createDebugApi(game, deps) {
       },
       mowing_visuals: {
         tile_size_px: game.mowGrid.cell,
-        asset: 'assets/grass-autotile-sheet.png',
+        assets: {
+          unmowed: 'assets/grass-unmowed.png',
+          mowed: 'assets/grass-mowed.png',
+        },
         frame_width_px: 16,
-        frame_height_px: 20,
-        overlap_px: 4,
-        autotile_rows: ['unmowed', 'mowed'],
+        frame_height_px: 16,
         autotile_columns: 8,
         autotile_mask_bits: ['south_lower', 'east_lower', 'southeast_lower'],
+        column_zero_rotation: 'deterministic quarter-turn from hashed grid row/col',
       },
       review: {
         mode_active: game.ui.mode === 'review',
