@@ -18,26 +18,19 @@ export function createSceneRenderer(game, deps) {
     return game.mowGrid.states[row * game.mowGrid.cols + col];
   }
 
-  function getCellHeight(cell) {
-    if (cell === 1) {
-      return 1;
-    }
-    if (cell === 2) {
-      return 0;
-    }
-    return -1;
+  function isDifferentNeighbor(cell, neighborCell) {
+    return neighborCell !== cell;
   }
 
   function getGrassFrameColumn(row, col, cell) {
-    const height = getCellHeight(cell);
-    const southLower = getCellHeight(getCellState(row + 1, col)) < height;
-    const eastLower = getCellHeight(getCellState(row, col + 1)) < height;
-    const southEastLower = getCellHeight(getCellState(row + 1, col + 1)) < height;
+    const southDifferent = isDifferentNeighbor(cell, getCellState(row + 1, col));
+    const eastDifferent = isDifferentNeighbor(cell, getCellState(row, col + 1));
+    const southEastDifferent = isDifferentNeighbor(cell, getCellState(row + 1, col + 1));
 
     return (
-      (southLower ? 1 : 0)
-      + (eastLower ? 2 : 0)
-      + (southEastLower ? 4 : 0)
+      (southDifferent ? 1 : 0)
+      + (eastDifferent ? 2 : 0)
+      + (southEastDifferent ? 4 : 0)
     );
   }
 
@@ -52,6 +45,33 @@ export function createSceneRenderer(game, deps) {
 
   function getGrassQuarterTurn(row, col) {
     return hashGrassCoordinates(row, col) & 3;
+  }
+
+  function getGrassDebugInfoAt(x, y) {
+    const col = Math.floor(x / game.mowGrid.cell);
+    const row = Math.floor(y / game.mowGrid.cell);
+    if (
+      row < 0
+      || col < 0
+      || row >= game.mowGrid.rows
+      || col >= game.mowGrid.cols
+    ) {
+      return null;
+    }
+
+    const cell = getCellState(row, col);
+    const frameColumn = cell === 0 ? null : getGrassFrameColumn(row, col, cell);
+    const quarterTurn = frameColumn === 0 ? getGrassQuarterTurn(row, col) : 0;
+
+    return {
+      row,
+      col,
+      cell,
+      state: cell === 1 ? 'unmowed' : (cell === 2 ? 'mowed' : 'empty'),
+      frame_column: frameColumn,
+      asset: cell === 1 ? 'assets/grass-unmowed.png' : (cell === 2 ? 'assets/grass-mowed.png' : null),
+      rotation_degrees: quarterTurn * 90,
+    };
   }
 
   function drawMowGrid() {
@@ -304,5 +324,6 @@ export function createSceneRenderer(game, deps) {
     drawMowGrid,
     drawScene,
     drawForegroundArt,
+    getGrassDebugInfoAt,
   };
 }

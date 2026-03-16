@@ -8,6 +8,7 @@ export function createDebugApi(game, deps) {
     mowerUsesFuel,
     getRefillCost,
     getMapArtDiagnostics,
+    getGrassDebugInfoAt,
   } = deps;
 
   function renderGameToText() {
@@ -124,8 +125,12 @@ export function createDebugApi(game, deps) {
         frame_width_px: 16,
         frame_height_px: 16,
         autotile_columns: 8,
-        autotile_mask_bits: ['south_lower', 'east_lower', 'southeast_lower'],
+        autotile_mask_bits: ['south_different', 'east_different', 'southeast_different'],
         column_zero_rotation: 'deterministic quarter-turn from hashed grid row/col',
+        debug_panel_enabled: game.debug.grassSpriteIndices,
+        debug_under_cursor: game.debug.grassSpriteIndices
+          ? getGrassDebugInfoAt(game.input.pointer.x, game.input.pointer.y)
+          : null,
       },
       review: {
         mode_active: game.ui.mode === 'review',

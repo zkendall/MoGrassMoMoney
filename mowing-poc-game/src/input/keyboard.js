@@ -4,6 +4,7 @@ export function attachKeyboardInput({
   economyApi,
   menuApi,
   resetGame,
+  setGrassSpriteDebug,
 }) {
   window.addEventListener('keydown', (event) => {
     audioApi.ensureMusicStarted();
@@ -22,6 +23,12 @@ export function attachKeyboardInput({
 
     if (event.key.toLowerCase() === 'm') {
       audioApi.setMusicMuted(!game.audio.muted);
+    }
+
+    if (event.key.toLowerCase() === 'g') {
+      setGrassSpriteDebug(!game.debug.grassSpriteIndices);
+      event.preventDefault();
+      return;
     }
 
     if (event.key.toLowerCase() === 'e') {
@@ -75,4 +82,3 @@ export function attachKeyboardInput({
     }
   });
 }
-

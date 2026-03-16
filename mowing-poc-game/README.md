@@ -101,6 +101,7 @@ Runtime notes:
 Grass authoring note:
 
 - Use the `imagegen` skill to generate or revise `assets/grass-unmowed.png` and `assets/grass-mowed.png`.
+- [Piskel](https://www.piskelapp.com/) is a good browser-based option for editing these pixel art assets.
 - Source generations can be kept in `output/imagegen/`, but the runtime only depends on the final file under `assets/`.
 
 ## Controls

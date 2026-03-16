@@ -88,6 +88,7 @@ const uiRenderer = createUiRenderer(game, {
   menuApi,
   playbackApi,
   mowerUsesFuel: economyApi.mowerUsesFuel,
+  getGrassDebugInfoAt: sceneRenderer.getGrassDebugInfoAt,
 });
 const debugApi = createDebugApi(game, {
   menuApi,
@@ -95,7 +96,18 @@ const debugApi = createDebugApi(game, {
   mowerUsesFuel: economyApi.mowerUsesFuel,
   getRefillCost: economyApi.getRefillCost,
   getMapArtDiagnostics,
+  getGrassDebugInfoAt: sceneRenderer.getGrassDebugInfoAt,
 });
+
+function setGrassSpriteDebug(enabled) {
+  game.debug.grassSpriteIndices = Boolean(enabled);
+  economyApi.markTransientMessage(
+    game.debug.grassSpriteIndices
+      ? 'Grass debug panel on.'
+      : 'Grass debug panel off.'
+  );
+  render();
+}
 
 function render() {
   sceneRenderer.drawScene();
@@ -144,6 +156,7 @@ attachKeyboardInput({
   economyApi,
   menuApi,
   resetGame,
+  setGrassSpriteDebug,
 });
 
 window.advanceTime = (ms) => {
@@ -154,8 +167,9 @@ window.advanceTime = (ms) => {
   render();
 };
 window.render_game_to_text = debugApi.renderGameToText;
+window.setGrassSpriteDebug = setGrassSpriteDebug;
+window.getGrassDebugInfoAt = sceneRenderer.getGrassDebugInfoAt;
 
 resetGame();
 render();
 requestAnimationFrame(frame);
-

@@ -5,6 +5,7 @@ export function createUiRenderer(game, deps) {
     menuApi,
     playbackApi,
     mowerUsesFuel,
+    getGrassDebugInfoAt,
   } = deps;
 
   function drawRoundedRect(x, y, w, h, r) {
@@ -76,6 +77,39 @@ export function createUiRenderer(game, deps) {
       ? `${game.mower.fuel.toFixed(2)} / ${game.mower.fuelCapacity.toFixed(2)} gal`
       : 'N/A (manual)';
     game.ctx.fillText(`Fuel: ${fuelText}`, 28, 100);
+  }
+
+  function drawGrassDebugPanel() {
+    if (!game.debug.grassSpriteIndices) {
+      return;
+    }
+
+    const info = getGrassDebugInfoAt(game.input.pointer.x, game.input.pointer.y);
+    const x = game.world.width - 276;
+    const y = 12;
+    const w = 260;
+    const h = 122;
+
+    game.ctx.fillStyle = 'rgb(20 30 24 / 82%)';
+    game.ctx.fillRect(x, y, w, h);
+    game.ctx.strokeStyle = '#d3c8aa';
+    game.ctx.lineWidth = 2;
+    game.ctx.strokeRect(x, y, w, h);
+
+    game.ctx.fillStyle = '#f4f0e0';
+    game.ctx.font = 'bold 16px "Trebuchet MS", sans-serif';
+    game.ctx.fillText('Grass Debug', x + 14, y + 24);
+    game.ctx.font = '14px "Trebuchet MS", sans-serif';
+
+    if (!info) {
+      game.ctx.fillText('Cursor: outside mow grid', x + 14, y + 50);
+      return;
+    }
+
+    game.ctx.fillText(`Cursor: row ${info.row}, col ${info.col}`, x + 14, y + 50);
+    game.ctx.fillText(`State: ${info.state}`, x + 14, y + 70);
+    game.ctx.fillText(`Frame: ${info.frame_column ?? '-'}`, x + 14, y + 90);
+    game.ctx.fillText(`Rotation: ${info.rotation_degrees} deg`, x + 14, y + 110);
   }
 
   function drawMenu() {
@@ -165,6 +199,7 @@ export function createUiRenderer(game, deps) {
   function drawUi() {
     if (game.ui.mode === 'menu') {
       drawMenu();
+      drawGrassDebugPanel();
       if (game.ui.transientMessage) {
         drawInstructionToast(game.ui.transientMessage, 'Choose your setup and start the job.');
       }
@@ -172,6 +207,7 @@ export function createUiRenderer(game, deps) {
     }
 
     drawStatusBar();
+    drawGrassDebugPanel();
 
     if (game.ui.mode === 'start') {
       drawInstructionToast(

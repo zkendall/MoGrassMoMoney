@@ -32,9 +32,27 @@ test('mowing visibly changes autotiled grass lanes', async ({ page }) => {
 
   await page.goto('/', { waitUntil: 'domcontentloaded' });
   await driver.waitForRenderApi();
-  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'medium' });
 
   let state = await driver.readState();
+  expect(state.mode).toBe('menu');
+  expect(state.mowing_visuals.debug_panel_enabled).toBe(false);
+
+  await page.evaluate(() => {
+    window.setGrassSpriteDebug(true);
+  });
+  state = await driver.readState();
+  expect(state.mode).toBe('menu');
+  expect(state.mowing_visuals.debug_panel_enabled).toBe(true);
+  expect(state.mowing_visuals.debug_under_cursor).not.toBeNull();
+
+  await page.evaluate(() => {
+    window.setGrassSpriteDebug(false);
+  });
+  state = await driver.readState();
+  expect(state.mowing_visuals.debug_panel_enabled).toBe(false);
+
+  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'medium' });
+  state = await driver.readState();
   expect(state.mode).toBe('start');
   expect(state.mowing_visuals.assets).toEqual({
     unmowed: 'assets/grass-unmowed.png',
@@ -44,6 +62,7 @@ test('mowing visibly changes autotiled grass lanes', async ({ page }) => {
   expect(state.mowing_visuals.frame_width_px).toBe(16);
   expect(state.mowing_visuals.frame_height_px).toBe(16);
   expect(state.mowing_visuals.autotile_columns).toBe(8);
+  expect(state.mowing_visuals.debug_panel_enabled).toBe(false);
 
   const top = state.map.lawn.y + 54;
   const bottom = state.map.lawn.y + state.map.lawn.h - 54;
@@ -71,6 +90,58 @@ test('mowing visibly changes autotiled grass lanes', async ({ page }) => {
   const afterDownward = await sampleAverageColor(driver, lanePoints);
 
   expect(colorDelta(afterDownward, baselineLane)).toBeGreaterThan(8);
+
+  driver.expectNoConsoleErrors();
+});
+
+test('mowed tile above unmowed grass still picks a transition frame', async ({ page }) => {
+  const driver = createGameDriver(page);
+
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await driver.waitForRenderApi();
+  await driver.setupFromMenu({ mowerId: 'small_gas', lawnId: 'empty_field' });
+
+  await driver.drawPath([
+    { x: 120, y: 200 },
+    { x: 840, y: 200 },
+  ]);
+  await driver.clickReviewButton('Accept');
+  let state = await advanceUntil(driver, (snapshot) => snapshot.mode !== 'animating', {
+    maxSteps: 260,
+    stepMs: 60,
+  });
+  expect(['drawing', 'won']).toContain(state.mode);
+
+  await page.evaluate(() => {
+    window.setGrassSpriteDebug(true);
+  });
+  const bottomBoundary = await page.evaluate(() => {
+    const samples = [];
+    for (const y of [168, 184, 200, 216, 232, 248]) {
+      samples.push({
+        current: window.getGrassDebugInfoAt(420, y),
+        south: window.getGrassDebugInfoAt(420, y + 16),
+      });
+    }
+    return samples.find((sample) => (
+      sample.current?.state === 'mowed'
+      && sample.south?.state === 'unmowed'
+    )) || null;
+  });
+  expect(bottomBoundary).not.toBeNull();
+  expect(bottomBoundary.current.frame_column).toBeGreaterThan(0);
+
+  const clientPoint = await driver.worldToClient({ x: 420, y: bottomBoundary.current.row * 16 + 8 });
+  await page.mouse.move(clientPoint.x, clientPoint.y);
+
+  state = await driver.readState();
+  expect(state.mowing_visuals.debug_panel_enabled).toBe(true);
+  expect(state.mowing_visuals.debug_under_cursor).toMatchObject({
+    row: bottomBoundary.current.row,
+    col: bottomBoundary.current.col,
+    state: 'mowed',
+    frame_column: bottomBoundary.current.frame_column,
+  });
 
   driver.expectNoConsoleErrors();
 });

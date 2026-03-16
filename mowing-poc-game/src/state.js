@@ -155,6 +155,9 @@ export function createInitialState({
       penaltyPopups: [],
       overlappingObstacleIds: [],
     },
+    debug: {
+      grassSpriteIndices: false,
+    },
     audio: {
       ctx: null,
       master: null,
