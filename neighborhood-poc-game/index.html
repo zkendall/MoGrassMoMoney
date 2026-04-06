@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neighborhood Flyer POC</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="stage-panel">
+      <canvas id="game" width="960" height="640" aria-label="Neighborhood flyer game"></canvas>
+    </section>
+    <aside class="info-panel">
+      <h1>Neighborhood Flyer POC</h1>
+      <p>
+        Walk the block, inspect nearby houses, and drop flyers at each mailbox once.
+      </p>
+      <ul class="controls">
+        <li><span>Move</span><span>WASD / Arrows</span></li>
+        <li><span>Inspect / Deliver</span><span>Space / Enter</span></li>
+        <li><span>Close panel</span><span>Escape</span></li>
+        <li><span>Reset</span><span>R</span></li>
+        <li><span>Fullscreen</span><span>F</span></li>
+      </ul>
+      <p class="hint">
+        The first in-person tycoon slice is flyer canvassing only. Shapes stand in for houses,
+        roads, yards, and markers.
+      </p>
+    </aside>
+  </main>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>

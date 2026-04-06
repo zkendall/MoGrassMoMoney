@@ -1,0 +1,20 @@
+{
+  "name": "neighborhood-poc-game",
+  "version": "1.0.0",
+  "description": "In-person neighborhood flyer prototype for MoGrassMoMoney.",
+  "main": "game.js",
+  "scripts": {
+    "dev": "python3 scripts/dev_server.py 4175 --directory .",
+    "test": "npm run test:all",
+    "test:quick": "npx playwright test tests/movement-interaction.spec.js tests/flyer-state.spec.js --config=playwright.config.js",
+    "test:visual": "npx playwright test tests/visual-inspect.spec.js --config=playwright.config.js",
+    "test:all": "npx playwright test --config=playwright.config.js",
+    "test:headed": "npx playwright test --config=playwright.config.js --headed"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.58.2"
+  }
+}

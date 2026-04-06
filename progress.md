@@ -218,6 +218,10 @@ TODO / Next suggestions:
 - Verification: Verified by verify-tycoon.sh, artifact output check.
 - Input flow update in `/Users/zkendall/projects/MowGrassMoMoney/tycoon-poc-text/src/processing.js`:
   - Added optional `requireConfirm` parameter to `startProcessing` (default `true`).
+- Added new sibling app `neighborhood-poc-game` for the first in-person tycoon slice.
+  - Implemented authored neighborhood canvassing with WASD/arrow movement, nearby-house inspect flow, single-delivery flyer drops, canvas-only polygon rendering, and deterministic `render_game_to_text` / `advanceTime` hooks.
+  - Added app-local docs, no-cache dev server, Playwright config, and regression/visual tests with a dedicated game driver.
+  - Verified by `env NEIGHBORHOOD_DISABLE_WEBSERVER=1 NEIGHBORHOOD_BASE_URL=http://127.0.0.1:4175 npm --prefix neighborhood-poc-game run test:all` and shared Playwright client screenshot/state review.
 - Added 16-direction manual push mower generation in `mowing-poc-game/scripts/generate_push_mower_sheet.py`, produced `mowing-poc-game/assets/push-mower-16dir.png`, and switched manual mower rendering in `mowing-poc-game/game.js` to use nearest-frame directional sprites with matched draw scale and text-state frame reporting.
 - Verified by push-mower sprite generation, Python compile check, `node --check`, a Playwright client run, and `test:quick`.
 - Added art-backed `small` map pilot in `/Users/zkendall/projects/MowGrassMoMoney/mowing-poc-game`: new map art contract, runtime base/mask loading, mask-driven mow grid, art diagnostics in `render_game_to_text`, deterministic guide/mask/base generator, and docs/tests for the small-map path while `medium`/`large` stay procedural. `base.png` is a local placeholder because `OPENAI_API_KEY` was unavailable for live image generation.

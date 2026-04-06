@@ -1,0 +1,174 @@
+{
+  "coordinate_system": "origin top-left; +x right; +y down; units in canvas pixels",
+  "mode": "inspect",
+  "player": {
+    "x": 480,
+    "y": 166,
+    "radius": 14,
+    "facing": "up",
+    "heading": {
+      "x": 0,
+      "y": -1
+    }
+  },
+  "nearby_house_id": "elm-5",
+  "inspected_house_id": "elm-5",
+  "inspected_house": {
+    "id": "elm-5",
+    "name": "Elm House",
+    "flyer_delivered": true,
+    "value_band": "mid",
+    "churn_risk": "low",
+    "kind_tags": [
+      "qualified_lead",
+      "value_watch"
+    ]
+  },
+  "delivered_count": 1,
+  "houses": [
+    {
+      "id": "oak-1",
+      "name": "Oak House",
+      "kind_tags": [
+        "repeat_customer"
+      ],
+      "value_band": "mid",
+      "churn_risk": "high",
+      "flyer_delivered": false,
+      "interactable": false,
+      "inspected": false,
+      "mailbox": {
+        "x": 238,
+        "y": 176
+      },
+      "footprint": {
+        "x": 74,
+        "y": 74,
+        "w": 154,
+        "h": 90
+      }
+    },
+    {
+      "id": "cedar-2",
+      "name": "Cedar House",
+      "kind_tags": [
+        "qualified_lead"
+      ],
+      "value_band": "high",
+      "churn_risk": "low",
+      "flyer_delivered": false,
+      "interactable": false,
+      "inspected": false,
+      "mailbox": {
+        "x": 672,
+        "y": 176
+      },
+      "footprint": {
+        "x": 684,
+        "y": 62,
+        "w": 156,
+        "h": 96
+      }
+    },
+    {
+      "id": "maple-3",
+      "name": "Maple House",
+      "kind_tags": [
+        "new_block"
+      ],
+      "value_band": "low",
+      "churn_risk": "none",
+      "flyer_delivered": false,
+      "interactable": false,
+      "inspected": false,
+      "mailbox": {
+        "x": 250,
+        "y": 462
+      },
+      "footprint": {
+        "x": 92,
+        "y": 474,
+        "w": 148,
+        "h": 92
+      }
+    },
+    {
+      "id": "birch-4",
+      "name": "Birch House",
+      "kind_tags": [
+        "repeat_customer",
+        "qualified_lead"
+      ],
+      "value_band": "high",
+      "churn_risk": "medium",
+      "flyer_delivered": false,
+      "interactable": false,
+      "inspected": false,
+      "mailbox": {
+        "x": 670,
+        "y": 460
+      },
+      "footprint": {
+        "x": 682,
+        "y": 470,
+        "w": 154,
+        "h": 94
+      }
+    },
+    {
+      "id": "elm-5",
+      "name": "Elm House",
+      "kind_tags": [
+        "qualified_lead",
+        "value_watch"
+      ],
+      "value_band": "mid",
+      "churn_risk": "low",
+      "flyer_delivered": true,
+      "interactable": true,
+      "inspected": true,
+      "mailbox": {
+        "x": 474,
+        "y": 176
+      },
+      "footprint": {
+        "x": 392,
+        "y": 74,
+        "w": 162,
+        "h": 88
+      }
+    },
+    {
+      "id": "spruce-6",
+      "name": "Spruce House",
+      "kind_tags": [
+        "repeat_customer",
+        "churn_watch"
+      ],
+      "value_band": "mid",
+      "churn_risk": "high",
+      "flyer_delivered": false,
+      "interactable": false,
+      "inspected": false,
+      "mailbox": {
+        "x": 474,
+        "y": 462
+      },
+      "footprint": {
+        "x": 392,
+        "y": 474,
+        "w": 164,
+        "h": 90
+      }
+    }
+  ],
+  "objective": "Walk the neighborhood, inspect nearby houses, and deliver flyers once per mailbox.",
+  "controls": {
+    "move": "WASD / Arrow keys",
+    "inspect_or_deliver": "Space / Enter",
+    "close_panel": "Escape",
+    "reset": "R",
+    "fullscreen": "F"
+  },
+  "note": "Flyer delivered at Elm House."
+}
